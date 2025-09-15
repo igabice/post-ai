@@ -153,12 +153,13 @@ export function CalendarClientPage() {
           </TabsList>
           <TabsContent value="calendar">
             <Card>
-              <CardContent className="p-0">
+              <CardContent className="p-0 sm:p-4">
                 <Calendar
                   mode="single"
                   selected={selectedDate}
                   onSelect={handleDateSelect}
-                  className="w-full"
+                  className="p-0 sm:w-full"
+                  numberOfMonths={1}
                   classNames={{
                     months: 'flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 w-full p-4',
                     month: 'space-y-4 w-full',
@@ -175,12 +176,12 @@ export function CalendarClientPage() {
                       return (
                         <button
                           className={cn(
-                            "relative flex flex-col h-24 w-full p-2 text-left",
+                            "relative flex flex-col h-16 sm:h-24 w-full p-1 sm:p-2 text-left",
                             selectedDate && isSameDay(date, selectedDate) && "bg-secondary"
                           )}
                           onClick={() => handleDateSelect(date)}
                         >
-                          <span className={cn(props.className, 'h-auto p-0')} >
+                          <span className={cn(props.className, 'h-auto p-0 text-xs sm:text-sm')} >
                             {format(date, 'd')}
                           </span>
                            {postsForDay.length > 0 && (
@@ -189,7 +190,7 @@ export function CalendarClientPage() {
                                     <div 
                                         key={post.id} 
                                         className={cn(
-                                          "w-full text-left text-xs rounded-md p-1 truncate",
+                                          "w-full text-left text-[10px] sm:text-xs rounded-sm sm:rounded-md p-0.5 sm:p-1 truncate",
                                           statusColors[post.status]
                                          )}
                                     >
