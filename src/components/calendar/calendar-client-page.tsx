@@ -3,7 +3,7 @@
 
 import React, { useState, useTransition } from 'react';
 import { format, isSameDay } from 'date-fns';
-import { Calendar as CalendarIcon, List, Plus, Sparkles, Loader2, MoreHorizontal, Copy, Trash2, Pencil } from 'lucide-react';
+import { Calendar as CalendarIcon, List, Plus, Sparkles, Loader2, MoreHorizontal, Copy, Trash2, Pencil, ChevronDown } from 'lucide-react';
 import { useApp } from '@/context/app-provider';
 
 import { Button } from '@/components/ui/button';
@@ -12,10 +12,10 @@ import { Calendar } from '@/components/ui/calendar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { PostSheet } from './post-sheet';
-import type { Post } from '@/lib/types';
+import type { Post, PostStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { generateContentPlan } from './actions';
@@ -28,6 +28,7 @@ export function CalendarClientPage() {
   const [isGeneratingPlan, startPlanGeneration] = useTransition();
   const [isPostListDialogOpen, setIsPostListDialogOpen] = useState(false);
   const [postsForSelectedDay, setPostsForSelectedDay] = useState<Post[]>([]);
+  const [statusFilter, setStatusFilter] = useState<PostStatus | 'All'>('All');
   const { toast } = useToast();
 
   const handleDateSelect = (date: Date | undefined) => {
@@ -103,6 +104,10 @@ export function CalendarClientPage() {
         }
     });
   }
+
+  const filteredPosts = posts
+    .filter(post => statusFilter === 'All' || post.status === statusFilter)
+    .sort((a, b) => b.date.getTime() - a.date.getTime());
 
 
   const statusColors: { [key: string]: string } = {
@@ -215,12 +220,31 @@ export function CalendarClientPage() {
                             <TableRow>
                                 <TableHead>Date</TableHead>
                                 <TableHead>Content</TableHead>
-                                <TableHead>Status</TableHead>
+                                <TableHead>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="sm" className="p-1 h-auto font-medium">
+                                        Status <ChevronDown className="ml-1 h-3 w-3" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="start">
+                                      {['All', 'Draft', 'Needs Verification', 'Scheduled', 'Published'].map(status => (
+                                        <DropdownMenuCheckboxItem
+                                          key={status}
+                                          checked={statusFilter === status}
+                                          onSelect={() => setStatusFilter(status as PostStatus | 'All')}
+                                        >
+                                          {status}
+                                        </DropdownMenuCheckboxItem>
+                                      ))}
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {posts.sort((a, b) => b.date.getTime() - a.date.getTime()).map(post => (
+                            {filteredPosts.map(post => (
                                 <TableRow key={post.id}>
                                     <TableCell>{format(post.date, 'MMM d, yyyy')}</TableCell>
                                     <TableCell>
