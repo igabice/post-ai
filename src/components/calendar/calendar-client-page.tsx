@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import React, { useState, useTransition, useMemo } from 'react';
@@ -254,7 +252,7 @@ export function CalendarClientPage() {
                                     <div 
                                         key={post.id} 
                                         className={cn(
-                                          "w-full text-left text-[10px] sm:text-xs rounded-sm sm:rounded-md p-0.5 sm:p-1 truncate",
+                                          "w-full text-left text-[10px] sm:text-xs rounded-sm sm:rounded-md p-0.5 sm:p-1 whitespace-normal break-words",
                                           statusColors[post.status]
                                          )}
                                     >
@@ -514,7 +512,3 @@ export function CalendarClientPage() {
     </>
   );
 }
-
-    
-
-    
