@@ -4,7 +4,7 @@
 import React, { useState, useTransition, useMemo } from 'react';
 import { format, isSameDay } from 'date-fns';
 import { DateRange } from 'react-day-picker';
-import { Calendar as CalendarIcon, List, Plus, Sparkles, Loader2, MoreHorizontal, Copy, Trash2, Pencil, ChevronDown, X } from 'lucide-react';
+import { Calendar as CalendarIcon, List, Plus, Sparkles, Loader2, MoreHorizontal, Copy, Trash2, Pencil, ChevronDown, X, Eye } from 'lucide-react';
 import { useApp } from '@/context/app-provider';
 
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuCheckboxItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { PostSheet } from './post-sheet';
@@ -21,6 +21,7 @@ import type { Post, PostStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { generateContentPlan } from './actions';
+import { Separator } from '../ui/separator';
 
 export function CalendarClientPage() {
   const { posts, addPost, user, deletePost, copyPost } = useApp();
@@ -32,6 +33,7 @@ export function CalendarClientPage() {
   const [postsForSelectedDay, setPostsForSelectedDay] = useState<Post[]>([]);
   const [statusFilter, setStatusFilter] = useState<PostStatus | 'All'>('All');
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const handleDateSelect = (date: Date | undefined) => {
@@ -49,6 +51,11 @@ export function CalendarClientPage() {
       setActivePost(null);
       setIsSheetOpen(true);
     }
+  };
+
+  const handleViewPost = (post: Post) => {
+    setActivePost(post);
+    setIsViewDialogOpen(true);
   };
 
   const handleEditPost = (post: Post) => {
@@ -364,12 +371,16 @@ export function CalendarClientPage() {
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onClick={() => handleViewPost(post)}>
+                                                    <Eye className="mr-2 h-4 w-4" /> View
+                                                </DropdownMenuItem>
                                                 <DropdownMenuItem onClick={() => handleEditPost(post)}>
                                                     <Pencil className="mr-2 h-4 w-4" /> Edit
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem onClick={() => handleCopyPost(post)}>
                                                     <Copy className="mr-2 h-4 w-4" /> Copy
                                                 </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
                                                 <DropdownMenuItem className="text-destructive" onClick={() => handleDeletePost(post.id)}>
                                                     <Trash2 className="mr-2 h-4 w-4" /> Delete
                                                 </DropdownMenuItem>
@@ -430,8 +441,71 @@ export function CalendarClientPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          {activePost && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{activePost.title}</DialogTitle>
+                <DialogDescription>
+                  {format(activePost.date, 'MMMM d, yyyy, p')}
+                </DialogDescription>
+              </DialogHeader>
+              <Separator />
+              <div className="prose prose-sm dark:prose-invert max-w-none py-4 whitespace-pre-wrap">
+                {activePost.content}
+              </div>
+              <Separator />
+              <div className="flex justify-between items-center text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">Status:</span>
+                  <Badge variant="outline" className={cn("font-normal border-border", statusColors[activePost.status])}>
+                    {activePost.status}
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">Auto-publish:</span>
+                  <Badge variant={activePost.autoPublish ? 'default' : 'secondary'}>
+                    {activePost.autoPublish ? 'On' : 'Off'}
+                  </Badge>
+                </div>
+              </div>
+               {activePost.status === 'Published' && (
+                <>
+                <Separator />
+                <div>
+                  <h4 className="font-semibold mb-2">Analytics</h4>
+                  <div className="flex justify-around text-center">
+                    <div>
+                      <p className="text-2xl font-bold">{activePost.analytics.impressions.toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground">Impressions</p>
+                    </div>
+                     <div>
+                      <p className="text-2xl font-bold">{activePost.analytics.likes.toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground">Likes</p>
+                    </div>
+                     <div>
+                      <p className="text-2xl font-bold">{activePost.analytics.retweets.toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground">Retweets</p>
+                    </div>
+                  </div>
+                </div>
+                </>
+              )}
+              <DialogFooter className="pt-4">
+                <Button variant="outline" onClick={() => {
+                  setIsViewDialogOpen(false);
+                  handleEditPost(activePost);
+                }}>
+                  <Pencil className="mr-2 h-4 w-4" /> Edit
+                </Button>
+                <Button onClick={() => setIsViewDialogOpen(false)}>Close</Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
-
-    
