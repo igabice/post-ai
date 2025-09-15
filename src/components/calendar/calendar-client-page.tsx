@@ -4,7 +4,7 @@
 import React, { useState, useTransition } from 'react';
 import { format, isSameDay } from 'date-fns';
 import { DateRange } from 'react-day-picker';
-import { Calendar as CalendarIcon, List, Plus, Sparkles, Loader2, MoreHorizontal, Copy, Trash2, Pencil, ChevronDown } from 'lucide-react';
+import { Calendar as CalendarIcon, List, Plus, Sparkles, Loader2, MoreHorizontal, Copy, Trash2, Pencil, ChevronDown, X } from 'lucide-react';
 import { useApp } from '@/context/app-provider';
 
 import { Button } from '@/components/ui/button';
@@ -231,7 +231,7 @@ export function CalendarClientPage() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>
+                                <TableHead className="flex items-center gap-1">
                                   <Popover>
                                     <PopoverTrigger asChild>
                                       <Button
@@ -268,6 +268,16 @@ export function CalendarClientPage() {
                                       />
                                     </PopoverContent>
                                   </Popover>
+                                  {dateRange && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7"
+                                      onClick={() => setDateRange(undefined)}
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  )}
                                 </TableHead>
                                 <TableHead>Content</TableHead>
                                 <TableHead>
@@ -384,3 +394,5 @@ export function CalendarClientPage() {
     </>
   );
 }
+
+    
