@@ -130,6 +130,8 @@ export function CalendarClientPage() {
     Draft: 'bg-gray-100 text-gray-800 border-gray-200',
   };
 
+  const hasFilters = statusFilter !== 'All' || !!dateRange;
+
   return (
     <>
       <div className="space-y-6">
@@ -165,15 +167,45 @@ export function CalendarClientPage() {
         </Card>
 
         <Tabs defaultValue="calendar" className="w-full">
-          <div className="flex justify-between items-center mb-2">
+          <div className="flex justify-between items-center mb-4">
             <TabsList className="grid w-full grid-cols-2 sm:w-[400px]">
               <TabsTrigger value="calendar"><CalendarIcon className="mr-2 h-4 w-4" /> Calendar View</TabsTrigger>
               <TabsTrigger value="list"><List className="mr-2 h-4 w-4" /> List View</TabsTrigger>
             </TabsList>
-             <div className="text-sm text-muted-foreground hidden sm:block">
-              {filteredPosts.length} post{filteredPosts.length !== 1 && 's'} found
-            </div>
           </div>
+          
+          <div className="flex items-center justify-between min-h-[40px] mb-4">
+              <div className="flex items-center gap-2">
+                  {hasFilters && (
+                      <Button variant="ghost" size="sm" onClick={() => { setStatusFilter('All'); setDateRange(undefined); }}>
+                          <X className="mr-2 h-4 w-4" />
+                          Clear all filters
+                      </Button>
+                  )}
+                  {statusFilter !== 'All' && (
+                    <Badge variant="secondary" className="pl-2 pr-1 h-7">
+                      Status: {statusFilter}
+                      <Button variant="ghost" size="icon" className="ml-1 h-5 w-5" onClick={() => setStatusFilter('All')}>
+                          <X className="h-3 w-3" />
+                          <span className="sr-only">Remove status filter</span>
+                      </Button>
+                    </Badge>
+                  )}
+                  {dateRange?.from && (
+                    <Badge variant="secondary" className="pl-2 pr-1 h-7">
+                        {dateRange.to ? `${format(dateRange.from, "LLL d")} - ${format(dateRange.to, "LLL d")}` : format(dateRange.from, "LLL d")}
+                       <Button variant="ghost" size="icon" className="ml-1 h-5 w-5" onClick={() => setDateRange(undefined)}>
+                          <X className="h-3 w-3" />
+                           <span className="sr-only">Remove date filter</span>
+                      </Button>
+                    </Badge>
+                  )}
+              </div>
+              <div className="text-sm text-muted-foreground hidden sm:block">
+                  {filteredPosts.length} post{filteredPosts.length !== 1 && 's'} found
+              </div>
+          </div>
+
           <TabsContent value="calendar">
             <Card>
               <CardContent className="p-0 sm:p-4">
@@ -399,5 +431,7 @@ export function CalendarClientPage() {
     </>
   );
 }
+
+    
 
     
