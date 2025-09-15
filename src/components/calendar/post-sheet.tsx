@@ -182,8 +182,8 @@ export function PostSheet({ isOpen, setIsOpen, post, selectedDate }: PostSheetPr
           <Separator className="my-2" />
 
           <div className="space-y-4">
-            <h3 className="text-md font-semibold flex items-center gap-2">
-              <Sparkles className="text-accent h-4 w-4"/> AI Suggestions
+            <h3 className="text-md font-semibold flex items-center gap-2 text-primary">
+              <Sparkles className="h-4 w-4"/> AI Suggestions
             </h3>
             <Button variant="outline" type="button" onClick={handleGenerateFollowUps} disabled={isAiPending || !watchedContent}>
               {isAiPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}

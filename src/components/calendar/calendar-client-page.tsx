@@ -2,8 +2,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { format, isSameDay, isSameMonth } from 'date-fns';
-import { Calendar as CalendarIcon, List, Plus, Sparkles, AlertCircle } from 'lucide-react';
+import { format, isSameDay } from 'date-fns';
+import { Calendar as CalendarIcon, List, Plus, Sparkles } from 'lucide-react';
 import { TrendingTopicAlertsOutput } from '@/ai/flows/trending-topic-alerts';
 import { useApp } from '@/context/app-provider';
 
@@ -77,13 +77,13 @@ export function CalendarClientPage({ trendingTopicData }: CalendarClientPageProp
           </Button>
         </div>
 
-        <Card className="bg-accent/30 border-accent/50">
+        <Card className="bg-primary/10 border-primary/20">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="text-accent" />
+            <CardTitle className="flex items-center gap-2 text-primary">
+              <Sparkles />
               Trending Topic Alert
             </CardTitle>
-            <CardDescription>{trendingTopicData.trendingTopic}</CardDescription>
+            <CardDescription className="text-foreground/80">{trendingTopicData.trendingTopic}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-2 text-sm">
@@ -111,32 +111,37 @@ export function CalendarClientPage({ trendingTopicData }: CalendarClientPageProp
                   onSelect={handleDateSelect}
                   className="w-full"
                   classNames={{
-                    months: 'flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 w-full',
+                    months: 'flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 w-full p-4',
                     month: 'space-y-4 w-full',
+                    table: 'w-full border-collapse space-y-1',
+                    head_row: 'flex w-full',
+                    head_cell: 'text-muted-foreground rounded-md w-full font-normal text-[0.8rem]',
+                    row: 'flex w-full mt-2',
+                    cell: 'h-full w-full text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20',
+                    day: 'h-full w-full p-2 font-normal aria-selected:opacity-100',
                   }}
                   components={{
                     Day: ({ date, ...props }) => {
                       const postsForDay = posts.filter((p) => isSameDay(p.date, date));
-                      if (postsForDay.length > 0) {
-                        return (
-                          <div
-                            className={cn(
-                              "relative h-full w-full flex items-center justify-center rounded-md",
-                              isSameDay(date, selectedDate || new Date()) && "bg-accent/50"
-                            )}
-                          >
-                            <span {...props} >
-                              {format(date, 'd')}
-                            </span>
-                            <div className="absolute bottom-1 w-1 h-1 rounded-full bg-primary" />
-                          </div>
-                        );
-                      }
                       return (
-                        <div className="h-full w-full flex items-center justify-center rounded-md">
-                           <span {...props} >
+                        <div
+                          className={cn(
+                            "relative flex flex-col h-24 w-full p-2 text-left",
+                            isSameDay(date, selectedDate || new Date()) && "bg-accent/50"
+                          )}
+                        >
+                          <span {...props} >
                             {format(date, 'd')}
                           </span>
+                           {postsForDay.length > 0 && (
+                            <div className="flex-1 overflow-y-auto mt-1 space-y-1">
+                                {postsForDay.map(post => (
+                                    <div key={post.id} className="w-full text-xs rounded-md bg-primary/20 p-1 text-primary-foreground">
+                                        {post.title}
+                                    </div>
+                                ))}
+                            </div>
+                           )}
                         </div>
                       );
                     },

@@ -34,7 +34,7 @@ export default function DashboardPage() {
 
        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Lightbulb className="text-yellow-400" /> Optimal Posting Times</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-yellow-400"><Lightbulb /> Optimal Posting Times</CardTitle>
             <CardDescription>Post at these times for maximum reach based on your audience activity.</CardDescription>
           </CardHeader>
           <CardContent>
@@ -44,8 +44,8 @@ export default function DashboardPage() {
                     <p className="text-sm">8:00 AM - 10:00 AM</p>
                     <p className="text-sm">4:00 PM - 6:00 PM</p>
                 </div>
-                 <div className="p-3 bg-accent/10 rounded-lg text-center">
-                    <p className="font-bold text-accent-foreground/80">Weekends</p>
+                 <div className="p-3 bg-secondary rounded-lg text-center">
+                    <p className="font-bold text-secondary-foreground/80">Weekends</p>
                     <p className="text-sm">11:00 AM - 1:00 PM</p>
                 </div>
             </div>
