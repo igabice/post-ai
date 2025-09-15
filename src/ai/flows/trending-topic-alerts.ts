@@ -42,20 +42,23 @@ const trendingTopicAlertsPrompt = ai.definePrompt({
   name: 'trendingTopicAlertsPrompt',
   input: {schema: TrendingTopicAlertsInputSchema},
   output: {schema: TrendingTopicAlertsOutputSchema},
-  prompt: `You are a social media expert.  You will identify a trending topic based on the user's preferences, and create tweet ideas related to the topic.
+  prompt: `You are a social media expert. You will identify a trending topic based on the user's preferences and create tweet ideas related to that topic.
 
-  The user is interested in the following topics: {{topicPreferences}}
-  The user wants to post {{postFrequency}}.
-  {{#if summary}}
-  The user has provided the following summary for the content: {{summary}}
-  {{/if}}
-  {{#if tone}}
-  The user wants the tone to be {{tone}}.
-  {{/if}}
+The user is interested in the following topics: {{topicPreferences}}.
+The user wants to post {{postFrequency}}.
 
-  Identify one trending topic relevant to the user's interests.
-  Generate 3 tweet ideas related to the trending topic.
-  `,
+{{#if summary}}
+The user has provided the following summary for the content: "{{summary}}". The trending topic and tweet ideas should be based on this summary.
+{{else}}
+Identify one trending topic relevant to the user's interests.
+{{/if}}
+
+{{#if tone}}
+The user wants the tone to be {{tone}}.
+{{/if}}
+
+Generate 3 tweet ideas related to the identified trending topic.
+`,
 });
 
 const trendingTopicAlertsFlow = ai.defineFlow(
