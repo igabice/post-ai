@@ -1,15 +1,19 @@
+
 'use server';
 
 import {
   getTrendingTopicAlerts,
-  TrendingTopicAlertsInput,
-  TrendingTopicAlertsOutput,
+  type TrendingTopicAlertsInput,
+  type TrendingTopicAlertsOutput,
 } from '@/ai/flows/trending-topic-alerts';
 import {
   generateFollowUpSuggestions,
-  GenerateFollowUpSuggestionsInput,
-  GenerateFollowUpSuggestionsOutput,
+  type GenerateFollowUpSuggestionsInput,
+  type GenerateFollowUpSuggestionsOutput,
 } from '@/ai/flows/personalized-follow-up-suggestions';
+import { generateContentPlan as generateContentPlanFlow, type GenerateContentPlanInput } from '@/ai/flows/generate-content-plan';
+import { Post } from '@/lib/types';
+
 
 export async function getTrendingTopics(
   input: TrendingTopicAlertsInput
@@ -39,4 +43,16 @@ export async function getFollowUpSuggestions(
       followUpSuggestions: ['Failed to generate follow-up suggestions. Please try again.'],
     };
   }
+}
+
+export async function generateContentPlan(
+  input: GenerateContentPlanInput
+): Promise<{ posts: Omit<Post, 'id' | 'analytics'>[] }> {
+    try {
+        const result = await generateContentPlanFlow(input);
+        return result;
+    } catch (error) {
+        console.error("Error generating content plan:", error);
+        return { posts: [] };
+    }
 }

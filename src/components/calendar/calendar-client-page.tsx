@@ -1,10 +1,9 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useTransition } from 'react';
 import { format, isSameDay } from 'date-fns';
-import { Calendar as CalendarIcon, List, Plus, Sparkles } from 'lucide-react';
-import { TrendingTopicAlertsOutput } from '@/ai/flows/trending-topic-alerts';
+import { Calendar as CalendarIcon, List, Plus, Sparkles, Loader2 } from 'lucide-react';
 import { useApp } from '@/context/app-provider';
 
 import { Button } from '@/components/ui/button';
@@ -16,16 +15,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PostSheet } from './post-sheet';
 import type { Post } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
+import { generateContentPlan } from './actions';
 
-type CalendarClientPageProps = {
-  trendingTopicData: TrendingTopicAlertsOutput;
-};
-
-export function CalendarClientPage({ trendingTopicData }: CalendarClientPageProps) {
-  const { posts } = useApp();
+export function CalendarClientPage() {
+  const { posts, addPost, user } = useApp();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [activePost, setActivePost] = useState<Post | null>(null);
+  const [isGeneratingPlan, startPlanGeneration] = useTransition();
+  const { toast } = useToast();
+
 
   const handleDateSelect = (date: Date | undefined) => {
     setSelectedDate(date);
@@ -45,19 +45,35 @@ export function CalendarClientPage({ trendingTopicData }: CalendarClientPageProp
     setIsSheetOpen(true);
   };
 
-  const handleUseTrend = () => {
-    setSelectedDate(new Date());
-    setActivePost({
-      id: '', // Will be set on save
-      date: new Date(),
-      title: trendingTopicData.trendingTopic,
-      content: trendingTopicData.tweetIdeas[0] || '',
-      status: 'Draft',
-      autoPublish: false,
-      analytics: { likes: 0, retweets: 0, impressions: 0 },
+  const handleGeneratePlan = () => {
+    startPlanGeneration(async () => {
+        const result = await generateContentPlan({
+            topicPreferences: user.topicPreferences,
+            postFrequency: user.postFrequency,
+        });
+
+        if(result.posts) {
+            result.posts.forEach(post => {
+                addPost({
+                    ...post,
+                    id: new Date().toISOString() + Math.random(),
+                    analytics: { likes: 0, retweets: 0, impressions: 0 },
+                });
+            });
+            toast({
+                title: 'Content Plan Generated',
+                description: `${result.posts.length} new posts have been added to your calendar as drafts.`
+            });
+        } else {
+             toast({
+                title: 'Error',
+                description: 'Could not generate a content plan. Please try again.',
+                variant: 'destructive',
+            });
+        }
     });
-    setIsSheetOpen(true);
   }
+
 
   const statusColors: { [key: string]: string } = {
     Published: 'bg-green-100 text-green-800 border-green-200',
@@ -77,22 +93,25 @@ export function CalendarClientPage({ trendingTopicData }: CalendarClientPageProp
           </Button>
         </div>
 
-        <Card>
+        <Card className="bg-card">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-accent">
+            <CardTitle className="flex items-center gap-2">
               <Sparkles />
-              Trending Topic Alert
+              Generate Content Plan
             </CardTitle>
-            <CardDescription>{trendingTopicData.trendingTopic}</CardDescription>
+            <CardDescription>
+              Let AI create a week's worth of content ideas based on your profile preferences.
+              Posts will be added as drafts for you to review.
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2 text-sm">
-              {trendingTopicData.tweetIdeas.map((idea, index) => (
-                <p key={index} className="text-muted-foreground">{`- "${idea}"`}</p>
-              ))}
-            </div>
-            <Button variant="secondary" size="sm" className="mt-4" onClick={handleUseTrend}>
-              Use this Idea
+            <Button onClick={handleGeneratePlan} disabled={isGeneratingPlan}>
+              {isGeneratingPlan ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="mr-2 h-4 w-4" />
+              )}
+              Generate Weekly Plan
             </Button>
           </CardContent>
         </Card>
@@ -117,7 +136,7 @@ export function CalendarClientPage({ trendingTopicData }: CalendarClientPageProp
                     head_row: 'flex w-full',
                     head_cell: 'text-muted-foreground rounded-md w-full font-normal text-[0.8rem]',
                     row: 'flex w-full mt-2',
-                    cell: 'h-full w-full text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent/50 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20',
+                    cell: 'h-full w-full text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-background/80 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20',
                     day: 'h-full w-full p-2 font-normal aria-selected:opacity-100',
                   }}
                   components={{
@@ -138,7 +157,10 @@ export function CalendarClientPage({ trendingTopicData }: CalendarClientPageProp
                                 {postsForDay.map(post => (
                                     <button 
                                         key={post.id} 
-                                        className="w-full text-left text-xs rounded-md bg-secondary p-1 text-secondary-foreground hover:bg-muted"
+                                        className={cn(
+                                          "w-full text-left text-xs rounded-md p-1 hover:bg-muted",
+                                          statusColors[post.status]
+                                         )}
                                         onClick={() => handleEditPost(post)}
                                     >
                                         {post.title}
@@ -175,7 +197,7 @@ export function CalendarClientPage({ trendingTopicData }: CalendarClientPageProp
                                         <p className="text-sm text-muted-foreground truncate max-w-xs">{post.content}</p>
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant="outline" className={cn("font-normal", statusColors[post.status])}>
+                                        <Badge variant="outline" className={cn("font-normal border-border", statusColors[post.status])}>
                                           {post.status}
                                         </Badge>
                                     </TableCell>
