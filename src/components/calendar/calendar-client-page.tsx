@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useTransition } from 'react';
+import React, { useState, useTransition, useMemo } from 'react';
 import { format, isSameDay } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { Calendar as CalendarIcon, List, Plus, Sparkles, Loader2, MoreHorizontal, Copy, Trash2, Pencil, ChevronDown, X } from 'lucide-react';
@@ -108,19 +108,21 @@ export function CalendarClientPage() {
     });
   }
 
-  const filteredPosts = posts
+  const filteredPosts = useMemo(() => posts
     .filter(post => {
       const statusMatch = statusFilter === 'All' || post.status === statusFilter;
-      if (!dateRange?.from) return statusMatch;
-
-      const toDate = dateRange.to ? new Date(dateRange.to) : new Date(dateRange.from);
-      toDate.setHours(23, 59, 59, 999); // Include the whole end day
-
-      const dateMatch = post.date >= dateRange.from && post.date <= toDate;
+      
+      let dateMatch = true;
+      if (dateRange?.from) {
+        const from = new Date(dateRange.from);
+        from.setHours(0,0,0,0);
+        const to = dateRange.to ? new Date(dateRange.to) : from;
+        to.setHours(23, 59, 59, 999);
+        dateMatch = post.date >= from && post.date <= to;
+      }
 
       return statusMatch && dateMatch;
-    })
-    .sort((a, b) => b.date.getTime() - a.date.getTime());
+    }), [posts, statusFilter, dateRange]);
 
 
   const statusColors: { [key: string]: string } = {
@@ -175,7 +177,7 @@ export function CalendarClientPage() {
           </div>
           
           <div className="flex items-center justify-between min-h-[40px] mb-4">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                   {hasFilters && (
                       <Button variant="ghost" size="sm" onClick={() => { setStatusFilter('All'); setDateRange(undefined); }}>
                           <X className="mr-2 h-4 w-4" />
@@ -227,7 +229,7 @@ export function CalendarClientPage() {
                   }}
                   components={{
                     Day: ({ date, ...props }) => {
-                      const postsForDay = posts.filter((p) => isSameDay(p.date, date));
+                      const postsForDay = filteredPosts.filter((p) => isSameDay(p.date, date));
                       return (
                         <button
                           className={cn(
@@ -431,7 +433,5 @@ export function CalendarClientPage() {
     </>
   );
 }
-
-    
 
     
