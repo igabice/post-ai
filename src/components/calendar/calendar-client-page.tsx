@@ -46,7 +46,7 @@ export function CalendarClientPage() {
       setPostsForSelectedDay(postsForDay);
       setIsPostListDialogOpen(true);
     } else if (postsForDay.length === 1) {
-      handleEditPost(postsForDay[0]);
+      handleViewPost(postsForDay[0]);
     } else {
       setActivePost(null);
       setIsSheetOpen(true);
@@ -250,7 +250,7 @@ export function CalendarClientPage() {
                           </span>
                            {postsForDay.length > 0 && (
                             <div className="flex-1 overflow-y-auto mt-1 space-y-1">
-                                {postsForDay.map(post => (
+                                {postsForDay.slice(0, 2).map(post => (
                                     <div 
                                         key={post.id} 
                                         className={cn(
@@ -261,6 +261,11 @@ export function CalendarClientPage() {
                                         {post.title}
                                     </div>
                                 ))}
+                                {postsForDay.length > 2 && (
+                                    <div className="text-[10px] sm:text-xs text-muted-foreground">
+                                        + {postsForDay.length - 2} more
+                                    </div>
+                                )}
                             </div>
                            )}
                         </button>
@@ -408,7 +413,7 @@ export function CalendarClientPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Posts for {selectedDate ? format(selectedDate, 'MMMM d, yyyy') : ''}</DialogTitle>
-            <DialogDescription>Select a post to edit, or create a new one.</DialogDescription>
+            <DialogDescription>Select a post to view or edit, or create a new one.</DialogDescription>
           </DialogHeader>
           <div className="space-y-2 py-4">
             {postsForSelectedDay.map(post => (
@@ -418,7 +423,7 @@ export function CalendarClientPage() {
                 className="w-full justify-start"
                 onClick={() => {
                   setIsPostListDialogOpen(false);
-                  handleEditPost(post);
+                  handleViewPost(post);
                 }}
               >
                 <div className="flex items-center gap-2">
