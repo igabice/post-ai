@@ -108,7 +108,7 @@ export function PostSheet({ isOpen, setIsOpen, post, selectedDate }: PostSheetPr
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetContent className="sm:max-w-lg w-full flex flex-col">
+      <SheetContent className="sm:max-w-2xl w-full flex flex-col">
         <SheetHeader>
           <SheetTitle>{post ? 'Edit Post' : 'Create Post'}</SheetTitle>
           <SheetDescription>
