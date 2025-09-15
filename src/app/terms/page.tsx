@@ -5,7 +5,7 @@ export default function TermsPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="prose dark:prose-invert max-w-4xl mx-auto">
         <Link href="/" className="text-primary hover:underline mb-8 block">&larr; Back to App</Link>
-        <h1>Terms and Conditions</h1>
+        <h1 className="text-4xl font-bold">Terms and Conditions</h1>
         <p>Last updated: September 16, 2025</p>
 
         <p>
