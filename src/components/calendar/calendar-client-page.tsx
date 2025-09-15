@@ -345,7 +345,7 @@ export function CalendarClientPage() {
                         <TableBody>
                             {filteredPosts.map(post => (
                                 <TableRow key={post.id}>
-                                    <TableCell>{format(post.date, 'MMM d, yyyy')}</TableCell>
+                                    <TableCell>{format(post.date, 'Pp')}</TableCell>
                                     <TableCell>
                                         <p className="font-medium">{post.title}</p>
                                         <p className="text-sm text-muted-foreground truncate max-w-xs">{post.content}</p>

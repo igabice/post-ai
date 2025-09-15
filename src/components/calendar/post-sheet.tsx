@@ -4,8 +4,8 @@ import React, { useState, useEffect, useTransition } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { format } from 'date-fns';
-import { Calendar as CalendarIcon, Sparkles, Loader2, ChevronDown } from 'lucide-react';
+import { format, setHours, setMinutes, parse } from 'date-fns';
+import { Calendar as CalendarIcon, Sparkles, Loader2, ChevronDown, Clock } from 'lucide-react';
 
 import { useApp } from '@/context/app-provider';
 import { getFollowUpSuggestions, getTrendingTopics } from '@/components/calendar/actions';
@@ -206,20 +206,49 @@ export function PostSheet({ isOpen, setIsOpen, post, selectedDate }: PostSheetPr
                   control={control}
                   name="date"
                   render={({ field }) => (
-                     <Popover>
-                        <PopoverTrigger asChild>
-                           <Button
-                              variant={'outline'}
-                              className="w-full justify-start text-left font-normal"
-                           >
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
-                           </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                           <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
-                        </PopoverContent>
-                     </Popover>
+                    <div className="flex gap-2">
+                      <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                                variant={'outline'}
+                                className="w-[150px] justify-start text-left font-normal"
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0">
+                            <Calendar 
+                              mode="single" 
+                              selected={field.value} 
+                              onSelect={(date) => {
+                                if (date) {
+                                  const newDate = new Date(field.value);
+                                  newDate.setFullYear(date.getFullYear(), date.getMonth(), date.getDate());
+                                  field.onChange(newDate);
+                                }
+                              }} 
+                              initialFocus 
+                            />
+                          </PopoverContent>
+                      </Popover>
+                      <div className="relative w-[100px]">
+                        <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          type="time"
+                          className="pl-9"
+                          value={field.value ? format(field.value, 'HH:mm') : ''}
+                          onChange={(e) => {
+                            const timeValue = e.target.value;
+                            if (timeValue) {
+                              const [hours, minutes] = timeValue.split(':');
+                              const newDate = setMinutes(setHours(field.value, parseInt(hours, 10)), parseInt(minutes, 10));
+                              field.onChange(newDate);
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
                   )}
                 />
              </div>
