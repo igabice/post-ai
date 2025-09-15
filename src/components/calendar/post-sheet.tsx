@@ -8,7 +8,7 @@ import { format } from 'date-fns';
 import { Calendar as CalendarIcon, Sparkles, Loader2 } from 'lucide-react';
 
 import { useApp } from '@/context/app-provider';
-import { getFollowUpSuggestions } from '@/components/calendar/actions';
+import { getFollowUpSuggestions, getTrendingTopics } from '@/components/calendar/actions';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
@@ -41,9 +41,10 @@ export function PostSheet({ isOpen, setIsOpen, post, selectedDate }: PostSheetPr
   const { addPost, updatePost, user } = useApp();
   const { toast } = useToast();
   const [isAiPending, startAiTransition] = useTransition();
+  const [isAutofillPending, startAutofillTransition] = useTransition();
   const [followUpIdeas, setFollowUpIdeas] = useState<string[]>([]);
   
-  const { register, handleSubmit, control, reset, watch } = useForm<z.infer<typeof postSchema>>({
+  const { register, handleSubmit, control, reset, watch, setValue } = useForm<z.infer<typeof postSchema>>({
     resolver: zodResolver(postSchema),
     defaultValues: {
       title: '',
@@ -104,7 +105,23 @@ export function PostSheet({ isOpen, setIsOpen, post, selectedDate }: PostSheetPr
       });
       setFollowUpIdeas(result.followUpSuggestions);
     });
-  }
+  };
+
+  const handleAutofill = () => {
+    startAutofillTransition(async () => {
+       const result = await getTrendingTopics({
+        topicPreferences: user.topicPreferences,
+        postFrequency: user.postFrequency,
+      });
+      if (result.trendingTopic && result.tweetIdeas.length > 0) {
+        setValue('title', result.trendingTopic);
+        setValue('content', result.tweetIdeas[0]);
+        toast({ title: 'Content Suggested', description: 'AI has filled in the title and content for you.' });
+      } else {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not generate AI suggestions.' });
+      }
+    });
+  };
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -116,6 +133,11 @@ export function PostSheet({ isOpen, setIsOpen, post, selectedDate }: PostSheetPr
           </SheetDescription>
         </SheetHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col gap-4 overflow-y-auto p-1">
+          <Button variant="outline" type="button" onClick={handleAutofill} disabled={isAutofillPending}>
+              {isAutofillPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+              Auto-fill with AI suggestion
+          </Button>
+
           <div className="space-y-2">
             <Label htmlFor="title">Title (for internal tracking)</Label>
             <Input id="title" {...register('title')} />
