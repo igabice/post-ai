@@ -199,8 +199,8 @@ export function PostSheet({ isOpen, setIsOpen, post, selectedDate }: PostSheetPr
               <Label htmlFor="append-signature">Append signature</Label>
             </div>
            )}
-          <div className="grid grid-cols-2 gap-4">
-             <div className="space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+             <div className="space-y-2 sm:col-span-2">
                 <Label>Date</Label>
                 <Controller
                   control={control}
@@ -232,11 +232,11 @@ export function PostSheet({ isOpen, setIsOpen, post, selectedDate }: PostSheetPr
                             />
                           </PopoverContent>
                       </Popover>
-                      <div className="relative w-[100px]">
+                      <div className="relative flex-1">
                         <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                           type="time"
-                          className="pl-9"
+                          className="pl-9 w-full"
                           value={field.value ? format(field.value, 'HH:mm') : ''}
                           onChange={(e) => {
                             const timeValue = e.target.value;
