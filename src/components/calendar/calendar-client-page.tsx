@@ -3,6 +3,7 @@
 
 import React, { useState, useTransition } from 'react';
 import { format, isSameDay } from 'date-fns';
+import { DateRange } from 'react-day-picker';
 import { Calendar as CalendarIcon, List, Plus, Sparkles, Loader2, MoreHorizontal, Copy, Trash2, Pencil, ChevronDown } from 'lucide-react';
 import { useApp } from '@/context/app-provider';
 
@@ -13,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { PostSheet } from './post-sheet';
 import type { Post, PostStatus } from '@/lib/types';
@@ -29,6 +31,7 @@ export function CalendarClientPage() {
   const [isPostListDialogOpen, setIsPostListDialogOpen] = useState(false);
   const [postsForSelectedDay, setPostsForSelectedDay] = useState<Post[]>([]);
   const [statusFilter, setStatusFilter] = useState<PostStatus | 'All'>('All');
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const { toast } = useToast();
 
   const handleDateSelect = (date: Date | undefined) => {
@@ -106,7 +109,17 @@ export function CalendarClientPage() {
   }
 
   const filteredPosts = posts
-    .filter(post => statusFilter === 'All' || post.status === statusFilter)
+    .filter(post => {
+      const statusMatch = statusFilter === 'All' || post.status === statusFilter;
+      if (!dateRange?.from) return statusMatch;
+
+      const toDate = dateRange.to ? new Date(dateRange.to) : new Date(dateRange.from);
+      toDate.setHours(23, 59, 59, 999); // Include the whole end day
+
+      const dateMatch = post.date >= dateRange.from && post.date <= toDate;
+
+      return statusMatch && dateMatch;
+    })
     .sort((a, b) => b.date.getTime() - a.date.getTime());
 
 
@@ -218,7 +231,44 @@ export function CalendarClientPage() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Date</TableHead>
+                                <TableHead>
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <Button
+                                        id="date"
+                                        variant={"ghost"}
+                                        className={cn(
+                                          "p-1 h-auto font-medium justify-start",
+                                          !dateRange && "text-muted-foreground"
+                                        )}
+                                      >
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {dateRange?.from ? (
+                                          dateRange.to ? (
+                                            <>
+                                              {format(dateRange.from, "LLL dd, y")} -{" "}
+                                              {format(dateRange.to, "LLL dd, y")}
+                                            </>
+                                          ) : (
+                                            format(dateRange.from, "LLL dd, y")
+                                          )
+                                        ) : (
+                                          <span>Date</span>
+                                        )}
+                                      </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                      <Calendar
+                                        initialFocus
+                                        mode="range"
+                                        defaultMonth={dateRange?.from}
+                                        selected={dateRange}
+                                        onSelect={setDateRange}
+                                        numberOfMonths={2}
+                                      />
+                                    </PopoverContent>
+                                  </Popover>
+                                </TableHead>
                                 <TableHead>Content</TableHead>
                                 <TableHead>
                                   <DropdownMenu>
