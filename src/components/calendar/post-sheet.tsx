@@ -211,7 +211,7 @@ export function PostSheet({ isOpen, setIsOpen, post, selectedDate }: PostSheetPr
                           <PopoverTrigger asChild>
                             <Button
                                 variant={'outline'}
-                                className="w-[150px] justify-start text-left font-normal"
+                                className="w-[150px] flex-1 justify-start text-left font-normal"
                             >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                 {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
@@ -232,11 +232,11 @@ export function PostSheet({ isOpen, setIsOpen, post, selectedDate }: PostSheetPr
                             />
                           </PopoverContent>
                       </Popover>
-                      <div className="relative flex-1">
+                      <div className="relative">
                         <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                           type="time"
-                          className="pl-9 w-full"
+                          className="pl-9 w-[110px]"
                           value={field.value ? format(field.value, 'HH:mm') : ''}
                           onChange={(e) => {
                             const timeValue = e.target.value;
