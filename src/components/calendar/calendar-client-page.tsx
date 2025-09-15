@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -109,6 +110,12 @@ export function CalendarClientPage({ trendingTopicData }: CalendarClientPageProp
                   selected={selectedDate}
                   onSelect={handleDateSelect}
                   className="w-full"
+                  classNames={{
+                    months: 'flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 w-full',
+                    month: 'space-y-4 w-full',
+                    table: 'w-full border-collapse space-y-1',
+                    row: 'flex w-full mt-2',
+                  }}
                   components={{
                     DayContent: ({ date }) => {
                       const postsForDay = posts.filter((p) => isSameDay(p.date, date));
