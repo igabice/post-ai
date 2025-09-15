@@ -25,11 +25,13 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { Textarea } from '../ui/textarea';
 
 const profileSchema = z.object({
   name: z.string().min(2, {
     message: 'Name must be at least 2 characters.',
   }),
+  signature: z.string().optional(),
   postFrequency: z.string({
     required_error: 'Please select a posting frequency.',
   }),
@@ -53,6 +55,7 @@ export function ProfileForm() {
       name: user.name,
       postFrequency: user.postFrequency,
       topicPreferences: user.topicPreferences,
+      signature: user.signature,
     },
   });
 
@@ -82,6 +85,21 @@ export function ProfileForm() {
                         <FormControl>
                             <Input placeholder="Your Name" {...field} />
                         </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                
+                <FormField
+                    control={form.control}
+                    name="signature"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Signature</FormLabel>
+                        <FormControl>
+                            <Textarea placeholder="Your signature to be appended to posts" {...field} />
+                        </FormControl>
+                        <FormDescription>This signature can be automatically appended to your new posts.</FormDescription>
                         <FormMessage />
                         </FormItem>
                     )}

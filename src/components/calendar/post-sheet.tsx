@@ -47,6 +47,7 @@ export function PostSheet({ isOpen, setIsOpen, post, selectedDate }: PostSheetPr
   const [aiSummary, setAiSummary] = useState('');
   const [aiTone, setAiTone] = useState('');
   const [isCollapsibleOpen, setIsCollapsibleOpen] = useState(false);
+  const [appendSignature, setAppendSignature] = useState(false);
   
   const { register, handleSubmit, control, reset, watch, setValue } = useForm<z.infer<typeof postSchema>>({
     resolver: zodResolver(postSchema),
@@ -84,14 +85,22 @@ export function PostSheet({ isOpen, setIsOpen, post, selectedDate }: PostSheetPr
     setAiSummary('');
     setAiTone('');
     setIsCollapsibleOpen(false);
+    setAppendSignature(false);
   }, [post, selectedDate, reset, isOpen]);
 
   const onSubmit = (data: z.infer<typeof postSchema>) => {
+    let finalContent = data.content;
+    if (appendSignature && user.signature) {
+      finalContent = `${finalContent}\n\n${user.signature}`;
+    }
+
+    const postData = { ...data, content: finalContent };
+
     if (post) {
-      updatePost(post.id, data);
+      updatePost(post.id, postData);
       toast({ title: 'Post updated', description: 'Your post has been successfully updated.' });
     } else {
-      addPost(data);
+      addPost(postData);
       toast({ title: 'Post created', description: 'Your new post has been saved as a draft.' });
     }
     setIsOpen(false);
@@ -140,7 +149,7 @@ export function PostSheet({ isOpen, setIsOpen, post, selectedDate }: PostSheetPr
         <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col gap-4 overflow-y-auto p-1">
           <Collapsible open={isCollapsibleOpen} onOpenChange={setIsCollapsibleOpen}>
             <CollapsibleTrigger asChild>
-                <Button variant="secondary" type="button" className="w-full justify-between">
+                <Button variant="outline" type="button" className="w-full justify-between">
                     <div className="flex items-center gap-2">
                         <Sparkles />
                         Auto-fill with AI suggestion
@@ -184,6 +193,12 @@ export function PostSheet({ isOpen, setIsOpen, post, selectedDate }: PostSheetPr
             <Label htmlFor="content">Content</Label>
             <Textarea id="content" {...register('content')} className="min-h-[120px]" />
           </div>
+           {user.signature && (
+            <div className="flex items-center space-x-2">
+              <Switch id="append-signature" checked={appendSignature} onCheckedChange={setAppendSignature} />
+              <Label htmlFor="append-signature">Append signature</Label>
+            </div>
+           )}
           <div className="grid grid-cols-2 gap-4">
              <div className="space-y-2">
                 <Label>Date</Label>
@@ -245,7 +260,7 @@ export function PostSheet({ isOpen, setIsOpen, post, selectedDate }: PostSheetPr
             <h3 className="text-md font-semibold flex items-center gap-2 text-primary">
               <Sparkles className="h-4 w-4"/> AI Suggestions
             </h3>
-            <Button variant="secondary" type="button" onClick={handleGenerateFollowUps} disabled={isAiPending || !watchedContent}>
+            <Button variant="outline" type="button" onClick={handleGenerateFollowUps} disabled={isAiPending || !watchedContent}>
               {isAiPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
               Generate Follow-up Ideas
             </Button>

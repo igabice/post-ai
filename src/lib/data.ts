@@ -6,6 +6,7 @@ export const user: UserProfile = {
   avatarUrl: 'https://picsum.photos/seed/avatar1/100/100',
   topicPreferences: ['Technology', 'AI & Machine Learning', 'Startups'],
   postFrequency: '5x a week',
+  signature: '🚀 Alex | Building in Public',
 };
 
 const today = new Date();

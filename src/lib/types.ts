@@ -19,6 +19,7 @@ export type UserProfile = {
   avatarUrl: string;
   topicPreferences: string[];
   postFrequency: string;
+  signature?: string;
 };
 
 export const availableTopics = [
