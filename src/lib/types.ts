@@ -1,0 +1,36 @@
+export type PostStatus = 'Draft' | 'Scheduled' | 'Published' | 'Needs Verification';
+
+export type Post = {
+  id: string;
+  date: Date;
+  title: string;
+  content: string;
+  status: PostStatus;
+  autoPublish: boolean;
+  analytics: {
+    likes: number;
+    retweets: number;
+    impressions: number;
+  };
+};
+
+export type UserProfile = {
+  name: string;
+  avatarUrl: string;
+  topicPreferences: string[];
+  postFrequency: string;
+};
+
+export const availableTopics = [
+  'Technology',
+  'Real Estate',
+  'Marketing',
+  'Finance',
+  'Health & Wellness',
+  'Startups',
+  'AI & Machine Learning',
+  'E-commerce',
+  'Software Development',
+];
+
+export const availableFrequencies = ['3x a week', '5x a week', '1x a day', '2x a day'];

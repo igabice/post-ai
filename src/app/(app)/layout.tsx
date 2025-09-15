@@ -1,0 +1,126 @@
+'use client';
+
+import * as React from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import Image from 'next/image';
+
+import { cn } from '@/lib/utils';
+import { useApp } from '@/context/app-provider';
+import {
+  SidebarProvider,
+  Sidebar,
+  SidebarHeader,
+  SidebarContent,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarFooter,
+  SidebarTrigger,
+  SidebarInset,
+} from '@/components/ui/sidebar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { Icons } from '@/components/icons';
+
+const navItems = [
+  { href: '/calendar', icon: Icons.Calendar, label: 'Calendar' },
+  { href: '/dashboard', icon: Icons.Dashboard, label: 'Dashboard' },
+  { href: '/profile', icon: Icons.Profile, label: 'Profile' },
+];
+
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const { user } = useApp();
+
+  return (
+    <SidebarProvider>
+      <div className="flex min-h-screen">
+        <Sidebar className="bg-card border-r">
+          <SidebarHeader className="p-4">
+            <Link href="/calendar" className="flex items-center gap-2">
+              <Icons.Logo className="w-8 h-8 text-primary" />
+              <span className="font-bold text-lg group-data-[collapsible=icon]:hidden">
+                Content Compass
+              </span>
+            </Link>
+          </SidebarHeader>
+          <SidebarContent>
+            <SidebarMenu>
+              {navItems.map((item) => (
+                <SidebarMenuItem key={item.href}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname.startsWith(item.href)}
+                    tooltip={item.label}
+                  >
+                    <Link href={item.href}>
+                      <item.icon />
+                      <span>{item.label}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarContent>
+          <SidebarFooter className="p-4 border-t">
+             <div className="flex items-center gap-3">
+                <Image
+                    src={user.avatarUrl}
+                    alt={user.name}
+                    width={40}
+                    height={40}
+                    className="rounded-full"
+                    data-ai-hint="profile picture"
+                />
+                <div className="overflow-hidden group-data-[collapsible=icon]:hidden">
+                    <p className="font-semibold truncate">{user.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">Pro Plan</p>
+                </div>
+            </div>
+          </SidebarFooter>
+        </Sidebar>
+
+        <SidebarInset className="flex-1 flex flex-col">
+          <header className="flex h-14 items-center gap-4 border-b bg-card px-4 sm:h-16 sm:px-6 sticky top-0 z-30">
+            <SidebarTrigger className="md:hidden" />
+            <div className="flex-1">
+              {/* Optional Header Title can go here */}
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <Image
+                    src={user.avatarUrl}
+                    alt={user.name}
+                    width={36}
+                    height={36}
+                    className="rounded-full"
+                    data-ai-hint="profile picture"
+                  />
+                   <span className="sr-only">Toggle user menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>Settings</DropdownMenuItem>
+                <DropdownMenuItem>Support</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>Logout</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </header>
+          <main className="flex-1 p-4 sm:p-6 bg-background">{children}</main>
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
+  );
+}
