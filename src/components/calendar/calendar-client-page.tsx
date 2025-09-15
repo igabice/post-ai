@@ -165,10 +165,15 @@ export function CalendarClientPage() {
         </Card>
 
         <Tabs defaultValue="calendar" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 sm:w-[400px]">
-            <TabsTrigger value="calendar"><CalendarIcon className="mr-2 h-4 w-4" /> Calendar View</TabsTrigger>
-            <TabsTrigger value="list"><List className="mr-2 h-4 w-4" /> List View</TabsTrigger>
-          </TabsList>
+          <div className="flex justify-between items-center mb-2">
+            <TabsList className="grid w-full grid-cols-2 sm:w-[400px]">
+              <TabsTrigger value="calendar"><CalendarIcon className="mr-2 h-4 w-4" /> Calendar View</TabsTrigger>
+              <TabsTrigger value="list"><List className="mr-2 h-4 w-4" /> List View</TabsTrigger>
+            </TabsList>
+             <div className="text-sm text-muted-foreground hidden sm:block">
+              {filteredPosts.length} post{filteredPosts.length !== 1 && 's'} found
+            </div>
+          </div>
           <TabsContent value="calendar">
             <Card>
               <CardContent className="p-0 sm:p-4">
