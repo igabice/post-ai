@@ -3,6 +3,41 @@
 @tailwind utilities;
 
 @layer base {
+  @font-face {
+    font-family: 'Chirp';
+    src: url('/fonts/chirp/Chirp-Light.otf') format('opentype');
+    font-weight: 300;
+    font-style: normal;
+  }
+
+  @font-face {
+    font-family: 'Chirp';
+    src: url('/fonts/chirp/Chirp-Regular.otf') format('opentype');
+    font-weight: 400;
+    font-style: normal;
+  }
+
+  @font-face {
+    font-family: 'Chirp';
+    src: url('/fonts/chirp/Chirp-Medium.otf') format('opentype');
+    font-weight: 500;
+    font-style: normal;
+  }
+
+  @font-face {
+    font-family: 'Chirp';
+    src: url('/fonts/chirp/Chirp-Bold.otf') format('opentype');
+    font-weight: 700;
+    font-style: normal;
+  }
+
+  @font-face {
+    font-family: 'Chirp';
+    src: url('/fonts/chirp/Chirp-Heavy.otf') format('opentype');
+    font-weight: 900;
+    font-style: normal;
+  }
+
   :root {
     --background: 0 0% 100%;
     --foreground: 215 28% 10%;
