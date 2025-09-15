@@ -136,9 +136,13 @@ export function CalendarClientPage({ trendingTopicData }: CalendarClientPageProp
                            {postsForDay.length > 0 && (
                             <div className="flex-1 overflow-y-auto mt-1 space-y-1">
                                 {postsForDay.map(post => (
-                                    <div key={post.id} className="w-full text-xs rounded-md bg-primary/20 p-1 text-primary-foreground">
+                                    <button 
+                                        key={post.id} 
+                                        className="w-full text-left text-xs rounded-md bg-primary/20 p-1 text-primary-foreground hover:bg-primary/30"
+                                        onClick={() => handleEditPost(post)}
+                                    >
                                         {post.title}
-                                    </div>
+                                    </button>
                                 ))}
                             </div>
                            )}
