@@ -42,83 +42,85 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen">
-        <Sidebar className="bg-card border-r">
-        <SidebarHeader className="p-4 mt-2">
-            <Link href="/calendar" className="flex items-center gap-2">
-            <Icons.Logo className="w-8 h-8 text-primary" />
-            <span className="font-bold text-lg group-data-[collapsible=icon]:hidden">
-                Content Compass
-            </span>
-            </Link>
-        </SidebarHeader>
-        <SidebarContent>
-            <SidebarMenu>
-            {navItems.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                <SidebarMenuButton
-                    asChild
-                    isActive={pathname.startsWith(item.href)}
-                    tooltip={item.label}
-                >
-                    <Link href={item.href}>
-                    <item.icon />
-                    <span>{item.label}</span>
-                    </Link>
-                </SidebarMenuButton>
-                </SidebarMenuItem>
-            ))}
-            </SidebarMenu>
-        </SidebarContent>
-        <SidebarFooter className="p-4 border-t">
-            <div className="flex items-center gap-3">
+      <div className="flex min-h-screen w-full flex-col bg-background">
+        <header className="sticky top-0 flex h-14 items-center gap-4 border-b bg-card px-4 sm:h-16 sm:px-6 z-30 w-full">
+          <SidebarTrigger className="md:hidden" />
+          <div className="flex-1">
+            {/* Optional Header Title can go here */}
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full">
                 <Image
-                    src={user.avatarUrl}
-                    alt={user.name}
-                    width={40}
-                    height={40}
-                    className="rounded-full"
-                    data-ai-hint="profile picture"
+                  src={user.avatarUrl}
+                  alt={user.name}
+                  width={36}
+                  height={36}
+                  className="rounded-full"
+                  data-ai-hint="profile picture"
+                />
+                <span className="sr-only">Toggle user menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>Settings</DropdownMenuItem>
+              <DropdownMenuItem>Support</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>Logout</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </header>
+        <div className="flex min-h-[calc(100vh-3.5rem)] sm:min-h-[calc(100vh-4rem)]">
+          <Sidebar className="border-r">
+            <SidebarHeader className="p-4 mt-2">
+              <Link href="/calendar" className="flex items-center gap-2">
+                <Icons.Logo className="w-8 h-8 text-primary" />
+                <span className="font-bold text-lg group-data-[collapsible=icon]:hidden">
+                  Content Compass
+                </span>
+              </Link>
+            </SidebarHeader>
+            <SidebarContent>
+              <SidebarMenu>
+                {navItems.map((item) => (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={pathname === item.href}
+                      tooltip={item.label}
+                    >
+                      <Link href={item.href}>
+                        <item.icon />
+                        <span>{item.label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarContent>
+            <SidebarFooter className="p-4 border-t">
+              <div className="flex items-center gap-3">
+                <Image
+                  src={user.avatarUrl}
+                  alt={user.name}
+                  width={40}
+                  height={40}
+                  className="rounded-full"
+                  data-ai-hint="profile picture"
                 />
                 <div className="overflow-hidden group-data-[collapsible=icon]:hidden">
-                    <p className="font-semibold truncate">{user.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">Pro Plan</p>
+                  <p className="font-semibold truncate">{user.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    Pro Plan
+                  </p>
                 </div>
-            </div>
-        </SidebarFooter>
-        </Sidebar>
+              </div>
+            </SidebarFooter>
+          </Sidebar>
 
-        <div className="flex flex-1 flex-col">
-          <header className="flex h-14 items-center gap-4 border-b bg-card px-4 sm:h-16 sm:px-6 sticky top-0 z-30 w-full">
-            <SidebarTrigger className="md:hidden" />
-            <div className="flex-1">
-              {/* Optional Header Title can go here */}
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <Image
-                    src={user.avatarUrl}
-                    alt={user.name}
-                    width={36}
-                    height={36}
-                    className="rounded-full"
-                    data-ai-hint="profile picture"
-                  />
-                  <span className="sr-only">Toggle user menu</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>Settings</DropdownMenuItem>
-                <DropdownMenuItem>Support</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>Logout</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </header>
-          <main className="flex-1 p-4 sm:p-6 bg-background">{children}</main>
+          <main className="flex-1 p-4 sm:p-6">{children}</main>
         </div>
       </div>
     </SidebarProvider>
