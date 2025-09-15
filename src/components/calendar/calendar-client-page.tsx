@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { PostSheet } from './post-sheet';
 import type { Post } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -25,13 +26,25 @@ export function CalendarClientPage() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [activePost, setActivePost] = useState<Post | null>(null);
   const [isGeneratingPlan, startPlanGeneration] = useTransition();
+  const [isPostListDialogOpen, setIsPostListDialogOpen] = useState(false);
+  const [postsForSelectedDay, setPostsForSelectedDay] = useState<Post[]>([]);
   const { toast } = useToast();
 
-
   const handleDateSelect = (date: Date | undefined) => {
+    if (!date) return;
+
     setSelectedDate(date);
-    setActivePost(null);
-    setIsSheetOpen(true);
+    const postsForDay = posts.filter((p) => isSameDay(p.date, date));
+    
+    if (postsForDay.length > 1) {
+      setPostsForSelectedDay(postsForDay);
+      setIsPostListDialogOpen(true);
+    } else if (postsForDay.length === 1) {
+      handleEditPost(postsForDay[0]);
+    } else {
+      setActivePost(null);
+      setIsSheetOpen(true);
+    }
   };
 
   const handleEditPost = (post: Post) => {
@@ -40,8 +53,8 @@ export function CalendarClientPage() {
     setIsSheetOpen(true);
   };
   
-  const handleNewPost = () => {
-    setSelectedDate(new Date());
+  const handleNewPost = (date?: Date) => {
+    setSelectedDate(date || new Date());
     setActivePost(null);
     setIsSheetOpen(true);
   };
@@ -104,13 +117,13 @@ export function CalendarClientPage() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h1 className="text-3xl font-bold tracking-tight">Content Calendar</h1>
-          <Button onClick={handleNewPost}>
+          <Button onClick={() => handleNewPost()}>
             <Plus className="mr-2 h-4 w-4" />
             Create Post
           </Button>
         </div>
 
-        <Card className="bg-card">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Sparkles />
@@ -163,26 +176,25 @@ export function CalendarClientPage() {
                         <button
                           className={cn(
                             "relative flex flex-col h-24 w-full p-2 text-left",
-                            isSameDay(date, selectedDate || new Date()) && "bg-secondary"
+                            selectedDate && isSameDay(date, selectedDate) && "bg-secondary"
                           )}
                           onClick={() => handleDateSelect(date)}
                         >
-                          <span {...props} >
+                          <span className={cn(props.className, 'h-auto p-0')} >
                             {format(date, 'd')}
                           </span>
                            {postsForDay.length > 0 && (
                             <div className="flex-1 overflow-y-auto mt-1 space-y-1">
                                 {postsForDay.map(post => (
-                                    <button 
+                                    <div 
                                         key={post.id} 
                                         className={cn(
-                                          "w-full text-left text-xs rounded-md p-1 hover:bg-muted",
+                                          "w-full text-left text-xs rounded-md p-1 truncate",
                                           statusColors[post.status]
                                          )}
-                                        onClick={(e) => { e.stopPropagation(); handleEditPost(post); }}
                                     >
                                         {post.title}
-                                    </button>
+                                    </div>
                                 ))}
                             </div>
                            )}
@@ -234,7 +246,7 @@ export function CalendarClientPage() {
                                                 <DropdownMenuItem onClick={() => handleCopyPost(post)}>
                                                     <Copy className="mr-2 h-4 w-4" /> Copy
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem className="text-red-500" onClick={() => handleDeletePost(post.id)}>
+                                                <DropdownMenuItem className="text-destructive" onClick={() => handleDeletePost(post.id)}>
                                                     <Trash2 className="mr-2 h-4 w-4" /> Delete
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
@@ -256,6 +268,44 @@ export function CalendarClientPage() {
         post={activePost}
         selectedDate={selectedDate}
       />
+
+       <Dialog open={isPostListDialogOpen} onOpenChange={setIsPostListDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Posts for {selectedDate ? format(selectedDate, 'MMMM d, yyyy') : ''}</DialogTitle>
+            <DialogDescription>Select a post to edit, or create a new one.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-4">
+            {postsForSelectedDay.map(post => (
+              <Button
+                key={post.id}
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() => {
+                  setIsPostListDialogOpen(false);
+                  handleEditPost(post);
+                }}
+              >
+                <div className="flex items-center gap-2">
+                   <Badge variant="outline" className={cn("font-normal border-border h-5", statusColors[post.status])}>
+                        {post.status}
+                    </Badge>
+                    <span className="truncate">{post.title}</span>
+                </div>
+              </Button>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsPostListDialogOpen(false)}>Cancel</Button>
+            <Button onClick={() => {
+              setIsPostListDialogOpen(false);
+              handleNewPost(selectedDate);
+            }}>
+              <Plus className="mr-2 h-4 w-4" /> Create New Post
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
