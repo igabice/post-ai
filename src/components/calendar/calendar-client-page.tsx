@@ -216,7 +216,7 @@ export function CalendarClientPage() {
 
           <TabsContent value="calendar">
             <Card>
-              <CardContent className="p-0 sm:p-4">
+              <CardContent className="p-0">
                 <Calendar
                   mode="single"
                   selected={selectedDate}
@@ -224,12 +224,12 @@ export function CalendarClientPage() {
                   className="p-0"
                   classNames={{
                     months: 'flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0',
-                    month: 'space-y-4',
+                    month: 'space-y-4 w-full',
                     table: 'w-full border-collapse space-y-1',
                     head_row: 'flex',
                     head_cell: 'text-muted-foreground rounded-md w-full font-normal text-[0.8rem]',
                     row: 'flex w-full mt-2',
-                    cell: 'h-16 w-full sm:h-24 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-background/80 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20',
+                    cell: 'h-24 w-full text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-background/80 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20',
                     day: 'h-full w-full p-0 font-normal aria-selected:opacity-100',
                   }}
                   components={{
@@ -238,7 +238,7 @@ export function CalendarClientPage() {
                       return (
                         <button
                           className={cn(
-                            "relative flex flex-col h-full w-full p-1 sm:p-2 text-left",
+                            "relative flex flex-col h-full w-full p-1 text-left",
                             selectedDate && isSameDay(date, selectedDate) && "bg-secondary"
                           )}
                           onClick={() => handleDateSelect(date)}
@@ -252,7 +252,7 @@ export function CalendarClientPage() {
                                     <div 
                                         key={post.id} 
                                         className={cn(
-                                          "w-full text-left text-[10px] sm:text-xs rounded-sm sm:rounded-md p-0.5 sm:p-1 whitespace-normal break-words",
+                                          "w-full text-left text-[10px] sm:text-xs rounded-sm p-0.5 whitespace-normal break-words",
                                           statusColors[post.status]
                                          )}
                                     >
@@ -512,3 +512,5 @@ export function CalendarClientPage() {
     </>
   );
 }
+
+    
