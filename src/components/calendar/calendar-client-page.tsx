@@ -3,7 +3,7 @@
 
 import React, { useState, useTransition } from 'react';
 import { format, isSameDay } from 'date-fns';
-import { Calendar as CalendarIcon, List, Plus, Sparkles, Loader2 } from 'lucide-react';
+import { Calendar as CalendarIcon, List, Plus, Sparkles, Loader2, MoreHorizontal, Copy, Trash2, Pencil } from 'lucide-react';
 import { useApp } from '@/context/app-provider';
 
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { PostSheet } from './post-sheet';
 import type { Post } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -19,7 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { generateContentPlan } from './actions';
 
 export function CalendarClientPage() {
-  const { posts, addPost, user } = useApp();
+  const { posts, addPost, user, deletePost, copyPost } = useApp();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [activePost, setActivePost] = useState<Post | null>(null);
@@ -43,6 +44,22 @@ export function CalendarClientPage() {
     setSelectedDate(new Date());
     setActivePost(null);
     setIsSheetOpen(true);
+  };
+
+  const handleCopyPost = (post: Post) => {
+    copyPost(post.id);
+    toast({
+      title: 'Post Copied',
+      description: `A copy of "${post.title}" has been created as a draft.`,
+    });
+  };
+  
+  const handleDeletePost = (postId: string) => {
+    deletePost(postId);
+     toast({
+      title: 'Post Deleted',
+      description: 'The post has been successfully deleted.',
+    });
   };
 
   const handleGeneratePlan = () => {
@@ -143,11 +160,12 @@ export function CalendarClientPage() {
                     Day: ({ date, ...props }) => {
                       const postsForDay = posts.filter((p) => isSameDay(p.date, date));
                       return (
-                        <div
+                        <button
                           className={cn(
                             "relative flex flex-col h-24 w-full p-2 text-left",
                             isSameDay(date, selectedDate || new Date()) && "bg-secondary"
                           )}
+                          onClick={() => handleDateSelect(date)}
                         >
                           <span {...props} >
                             {format(date, 'd')}
@@ -161,14 +179,14 @@ export function CalendarClientPage() {
                                           "w-full text-left text-xs rounded-md p-1 hover:bg-muted",
                                           statusColors[post.status]
                                          )}
-                                        onClick={() => handleEditPost(post)}
+                                        onClick={(e) => { e.stopPropagation(); handleEditPost(post); }}
                                     >
                                         {post.title}
                                     </button>
                                 ))}
                             </div>
                            )}
-                        </div>
+                        </button>
                       );
                     },
                   }}
@@ -202,9 +220,25 @@ export function CalendarClientPage() {
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="sm" onClick={() => handleEditPost(post)}>
-                                            Edit
-                                        </Button>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                    <span className="sr-only">More</span>
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onClick={() => handleEditPost(post)}>
+                                                    <Pencil className="mr-2 h-4 w-4" /> Edit
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleCopyPost(post)}>
+                                                    <Copy className="mr-2 h-4 w-4" /> Copy
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem className="text-red-500" onClick={() => handleDeletePost(post.id)}>
+                                                    <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </TableCell>
                                 </TableRow>
                             ))}

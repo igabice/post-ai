@@ -9,7 +9,9 @@ interface AppContextType {
   posts: Post[];
   updateProfile: (profile: Partial<UserProfile>) => void;
   updatePost: (postId: string, postData: Partial<Post>) => void;
-  addPost: (postData: Post) => void;
+  addPost: (postData: Omit<Post, 'id' | 'analytics'>) => void;
+  deletePost: (postId: string) => void;
+  copyPost: (postId: string) => void;
   availableTopics: string[];
   availableFrequencies: string[];
   getPostById: (postId: string) => Post | undefined;
@@ -31,8 +33,32 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     );
   };
   
-  const addPost = (postData: Post) => {
-    setPosts((prev) => [...prev, postData]);
+  const addPost = (postData: Omit<Post, 'id' | 'analytics'>) => {
+    const newPost: Post = {
+      ...postData,
+      id: new Date().toISOString() + Math.random(),
+      analytics: { likes: 0, retweets: 0, impressions: 0 },
+    };
+    setPosts((prev) => [...prev, newPost]);
+  };
+
+  const deletePost = (postId: string) => {
+    setPosts((prev) => prev.filter((p) => p.id !== postId));
+  };
+
+  const copyPost = (postId: string) => {
+    const postToCopy = posts.find(p => p.id === postId);
+    if (postToCopy) {
+      const newPost: Post = {
+        ...postToCopy,
+        id: new Date().toISOString() + Math.random(),
+        title: `${postToCopy.title} (Copy)`,
+        status: 'Draft',
+        autoPublish: false,
+        analytics: { likes: 0, retweets: 0, impressions: 0 },
+      };
+      setPosts(prev => [newPost, ...prev]);
+    }
   };
 
   const getPostById = (postId: string) => {
@@ -40,7 +66,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AppContext.Provider value={{ user, posts, updateProfile, updatePost, addPost, availableTopics, availableFrequencies, getPostById }}>
+    <AppContext.Provider value={{ user, posts, updateProfile, updatePost, addPost, availableTopics, availableFrequencies, getPostById, deletePost, copyPost }}>
       {children}
     </AppContext.Provider>
   );

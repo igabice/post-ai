@@ -80,16 +80,11 @@ export function PostSheet({ isOpen, setIsOpen, post, selectedDate }: PostSheetPr
   }, [post, selectedDate, reset, isOpen]);
 
   const onSubmit = (data: z.infer<typeof postSchema>) => {
-    const postData = {
-      ...data,
-      analytics: post?.analytics || { likes: 0, retweets: 0, impressions: 0 },
-    };
-
     if (post) {
-      updatePost(post.id, postData);
+      updatePost(post.id, data);
       toast({ title: 'Post updated', description: 'Your post has been successfully updated.' });
     } else {
-      addPost({ ...postData, id: new Date().toISOString() });
+      addPost(data);
       toast({ title: 'Post created', description: 'Your new post has been saved as a draft.' });
     }
     setIsOpen(false);
