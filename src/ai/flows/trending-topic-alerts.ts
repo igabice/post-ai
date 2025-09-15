@@ -21,6 +21,8 @@ const TrendingTopicAlertsInputSchema = z.object({
     .describe(
       'The desired post frequency (e.g., 3x a week, 10x a month) to tailor content suggestions.'
     ),
+  summary: z.string().optional().describe('A short summary of the content to generate.'),
+  tone: z.string().optional().describe('The desired tone for the generated content.'),
 });
 export type TrendingTopicAlertsInput = z.infer<typeof TrendingTopicAlertsInputSchema>;
 
@@ -44,6 +46,12 @@ const trendingTopicAlertsPrompt = ai.definePrompt({
 
   The user is interested in the following topics: {{topicPreferences}}
   The user wants to post {{postFrequency}}.
+  {{#if summary}}
+  The user has provided the following summary for the content: {{summary}}
+  {{/if}}
+  {{#if tone}}
+  The user wants the tone to be {{tone}}.
+  {{/if}}
 
   Identify one trending topic relevant to the user's interests.
   Generate 3 tweet ideas related to the trending topic.

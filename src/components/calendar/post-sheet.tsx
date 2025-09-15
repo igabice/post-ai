@@ -5,7 +5,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { format } from 'date-fns';
-import { Calendar as CalendarIcon, Sparkles, Loader2 } from 'lucide-react';
+import { Calendar as CalendarIcon, Sparkles, Loader2, ChevronDown } from 'lucide-react';
 
 import { useApp } from '@/context/app-provider';
 import { getFollowUpSuggestions, getTrendingTopics } from '@/components/calendar/actions';
@@ -21,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import type { Post, PostStatus } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 
 type PostSheetProps = {
   isOpen: boolean;
@@ -43,6 +44,9 @@ export function PostSheet({ isOpen, setIsOpen, post, selectedDate }: PostSheetPr
   const [isAiPending, startAiTransition] = useTransition();
   const [isAutofillPending, startAutofillTransition] = useTransition();
   const [followUpIdeas, setFollowUpIdeas] = useState<string[]>([]);
+  const [aiSummary, setAiSummary] = useState('');
+  const [aiTone, setAiTone] = useState('');
+  const [isCollapsibleOpen, setIsCollapsibleOpen] = useState(false);
   
   const { register, handleSubmit, control, reset, watch, setValue } = useForm<z.infer<typeof postSchema>>({
     resolver: zodResolver(postSchema),
@@ -77,6 +81,9 @@ export function PostSheet({ isOpen, setIsOpen, post, selectedDate }: PostSheetPr
       });
     }
     setFollowUpIdeas([]);
+    setAiSummary('');
+    setAiTone('');
+    setIsCollapsibleOpen(false);
   }, [post, selectedDate, reset, isOpen]);
 
   const onSubmit = (data: z.infer<typeof postSchema>) => {
@@ -107,11 +114,14 @@ export function PostSheet({ isOpen, setIsOpen, post, selectedDate }: PostSheetPr
        const result = await getTrendingTopics({
         topicPreferences: user.topicPreferences,
         postFrequency: user.postFrequency,
+        summary: aiSummary,
+        tone: aiTone,
       });
       if (result.trendingTopic && result.tweetIdeas.length > 0) {
         setValue('title', result.trendingTopic);
         setValue('content', result.tweetIdeas[0]);
         toast({ title: 'Content Suggested', description: 'AI has filled in the title and content for you.' });
+        setIsCollapsibleOpen(false);
       } else {
         toast({ variant: 'destructive', title: 'Error', description: 'Could not generate AI suggestions.' });
       }
@@ -128,10 +138,43 @@ export function PostSheet({ isOpen, setIsOpen, post, selectedDate }: PostSheetPr
           </SheetDescription>
         </SheetHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col gap-4 overflow-y-auto p-1">
-          <Button variant="secondary" type="button" onClick={handleAutofill} disabled={isAutofillPending}>
-              {isAutofillPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-              Auto-fill with AI suggestion
-          </Button>
+          <Collapsible open={isCollapsibleOpen} onOpenChange={setIsCollapsibleOpen}>
+            <CollapsibleTrigger asChild>
+                <Button variant="secondary" type="button" className="w-full justify-between">
+                    <div className="flex items-center gap-2">
+                        <Sparkles />
+                        Auto-fill with AI suggestion
+                    </div>
+                    <ChevronDown className={`transform transition-transform ${isCollapsibleOpen ? 'rotate-180' : ''}`} />
+                </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-4 p-4 border border-t-0 rounded-b-md">
+                <div className="space-y-2">
+                    <Label htmlFor="ai-summary">Short Summary (optional)</Label>
+                    <Textarea id="ai-summary" placeholder="e.g., A tweet about the future of AI" value={aiSummary} onChange={(e) => setAiSummary(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="ai-tone">Tone</Label>
+                     <Select onValueChange={setAiTone} value={aiTone}>
+                        <SelectTrigger id="ai-tone">
+                            <SelectValue placeholder="Select a tone" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="Playful">Playful</SelectItem>
+                            <SelectItem value="Professional">Professional</SelectItem>
+                            <SelectItem value="Casual">Casual</SelectItem>
+                            <SelectItem value="Enthusiastic">Enthusiastic</SelectItem>
+                            <SelectItem value="Serious">Serious</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                 <Button type="button" onClick={handleAutofill} disabled={isAutofillPending} className="w-full">
+                    {isAutofillPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                    Generate
+                </Button>
+            </CollapsibleContent>
+          </Collapsible>
+
 
           <div className="space-y-2">
             <Label htmlFor="title">Title (for internal tracking)</Label>
@@ -199,7 +242,7 @@ export function PostSheet({ isOpen, setIsOpen, post, selectedDate }: PostSheetPr
           <Separator className="my-2" />
 
           <div className="space-y-4">
-            <h3 className="text-md font-semibold flex items-center gap-2 text-accent">
+            <h3 className="text-md font-semibold flex items-center gap-2 text-primary">
               <Sparkles className="h-4 w-4"/> AI Suggestions
             </h3>
             <Button variant="secondary" type="button" onClick={handleGenerateFollowUps} disabled={isAiPending || !watchedContent}>
