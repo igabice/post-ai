@@ -126,6 +126,17 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
 
         <main className="flex-1 p-4 sm:p-6">{children}</main>
       </div>
+       <footer className="border-t bg-background px-4 py-4 sm:px-6">
+          <div className="flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground gap-2">
+            <p>&copy; {new Date().getFullYear()} Content Compass. All rights reserved.</p>
+            <nav className="flex gap-4">
+              <Link href="#" className="hover:text-primary">Terms</Link>
+              <Link href="#" className="hover:text-primary">Privacy Policy</Link>
+              <Link href="#" className="hover:text-primary">About Us</Link>
+              <Link href="#" className="hover:text-primary">Contact Us</Link>
+            </nav>
+          </div>
+        </footer>
     </>
   );
 }
