@@ -133,7 +133,7 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
               <Link href="/terms" className="hover:text-primary">Terms</Link>
               <Link href="/privacy" className="hover:text-primary">Privacy Policy</Link>
               <Link href="/about" className="hover:text-primary">About Us</Link>
-              <Link href="#" className="hover:text-primary">Contact Us</Link>
+              <Link href="/contact" className="hover:text-primary">Contact Us</Link>
             </nav>
           </div>
         </footer>
