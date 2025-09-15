@@ -113,21 +113,32 @@ export function CalendarClientPage({ trendingTopicData }: CalendarClientPageProp
                   classNames={{
                     months: 'flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 w-full',
                     month: 'space-y-4 w-full',
-                    table: 'w-full border-collapse space-y-1',
-                    row: 'flex w-full mt-2',
                   }}
                   components={{
-                    DayContent: ({ date }) => {
+                    Day: ({ date, ...props }) => {
                       const postsForDay = posts.filter((p) => isSameDay(p.date, date));
                       if (postsForDay.length > 0) {
                         return (
-                          <div className="relative h-full w-full flex items-center justify-center">
-                            {format(date, 'd')}
+                          <div
+                            className={cn(
+                              "relative h-full w-full flex items-center justify-center rounded-md",
+                              isSameDay(date, selectedDate || new Date()) && "bg-accent/50"
+                            )}
+                          >
+                            <span {...props} >
+                              {format(date, 'd')}
+                            </span>
                             <div className="absolute bottom-1 w-1 h-1 rounded-full bg-primary" />
                           </div>
                         );
                       }
-                      return <>{format(date, 'd')}</>;
+                      return (
+                        <div className="h-full w-full flex items-center justify-center rounded-md">
+                           <span {...props} >
+                            {format(date, 'd')}
+                          </span>
+                        </div>
+                      );
                     },
                   }}
                 />
