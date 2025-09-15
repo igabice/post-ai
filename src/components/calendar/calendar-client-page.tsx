@@ -77,13 +77,13 @@ export function CalendarClientPage({ trendingTopicData }: CalendarClientPageProp
           </Button>
         </div>
 
-        <Card className="bg-primary/10 border-primary/20">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-primary">
+            <CardTitle className="flex items-center gap-2 text-accent">
               <Sparkles />
               Trending Topic Alert
             </CardTitle>
-            <CardDescription className="text-foreground/80">{trendingTopicData.trendingTopic}</CardDescription>
+            <CardDescription>{trendingTopicData.trendingTopic}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-2 text-sm">
@@ -91,7 +91,7 @@ export function CalendarClientPage({ trendingTopicData }: CalendarClientPageProp
                 <p key={index} className="text-muted-foreground">{`- "${idea}"`}</p>
               ))}
             </div>
-            <Button variant="outline" size="sm" className="mt-4 bg-background" onClick={handleUseTrend}>
+            <Button variant="secondary" size="sm" className="mt-4" onClick={handleUseTrend}>
               Use this Idea
             </Button>
           </CardContent>
@@ -117,7 +117,7 @@ export function CalendarClientPage({ trendingTopicData }: CalendarClientPageProp
                     head_row: 'flex w-full',
                     head_cell: 'text-muted-foreground rounded-md w-full font-normal text-[0.8rem]',
                     row: 'flex w-full mt-2',
-                    cell: 'h-full w-full text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20',
+                    cell: 'h-full w-full text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent/50 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20',
                     day: 'h-full w-full p-2 font-normal aria-selected:opacity-100',
                   }}
                   components={{
@@ -127,7 +127,7 @@ export function CalendarClientPage({ trendingTopicData }: CalendarClientPageProp
                         <div
                           className={cn(
                             "relative flex flex-col h-24 w-full p-2 text-left",
-                            isSameDay(date, selectedDate || new Date()) && "bg-accent/50"
+                            isSameDay(date, selectedDate || new Date()) && "bg-secondary"
                           )}
                         >
                           <span {...props} >
@@ -138,7 +138,7 @@ export function CalendarClientPage({ trendingTopicData }: CalendarClientPageProp
                                 {postsForDay.map(post => (
                                     <button 
                                         key={post.id} 
-                                        className="w-full text-left text-xs rounded-md bg-primary/20 p-1 text-primary-foreground hover:bg-primary/30"
+                                        className="w-full text-left text-xs rounded-md bg-secondary p-1 text-secondary-foreground hover:bg-muted"
                                         onClick={() => handleEditPost(post)}
                                     >
                                         {post.title}

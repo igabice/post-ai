@@ -133,7 +133,7 @@ export function PostSheet({ isOpen, setIsOpen, post, selectedDate }: PostSheetPr
           </SheetDescription>
         </SheetHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col gap-4 overflow-y-auto p-1">
-          <Button variant="outline" type="button" onClick={handleAutofill} disabled={isAutofillPending}>
+          <Button variant="secondary" type="button" onClick={handleAutofill} disabled={isAutofillPending}>
               {isAutofillPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
               Auto-fill with AI suggestion
           </Button>
@@ -204,10 +204,10 @@ export function PostSheet({ isOpen, setIsOpen, post, selectedDate }: PostSheetPr
           <Separator className="my-2" />
 
           <div className="space-y-4">
-            <h3 className="text-md font-semibold flex items-center gap-2 text-primary">
+            <h3 className="text-md font-semibold flex items-center gap-2 text-accent">
               <Sparkles className="h-4 w-4"/> AI Suggestions
             </h3>
-            <Button variant="outline" type="button" onClick={handleGenerateFollowUps} disabled={isAiPending || !watchedContent}>
+            <Button variant="secondary" type="button" onClick={handleGenerateFollowUps} disabled={isAiPending || !watchedContent}>
               {isAiPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
               Generate Follow-up Ideas
             </Button>
