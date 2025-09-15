@@ -231,8 +231,8 @@ export function CalendarClientPage() {
                     head_row: 'flex',
                     head_cell: 'text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]',
                     row: 'flex w-full mt-2',
-                    cell: 'h-auto w-auto text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-background/80 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20',
-                    day: 'h-auto p-0 font-normal aria-selected:opacity-100',
+                    cell: 'h-16 sm:h-24 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-background/80 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20',
+                    day: 'h-full w-full p-0 font-normal aria-selected:opacity-100',
                   }}
                   components={{
                     Day: ({ date, ...props }) => {
@@ -240,7 +240,7 @@ export function CalendarClientPage() {
                       return (
                         <button
                           className={cn(
-                            "relative flex flex-col h-16 sm:h-24 w-full p-1 sm:p-2 text-left",
+                            "relative flex flex-col h-full w-full p-1 sm:p-2 text-left",
                             selectedDate && isSameDay(date, selectedDate) && "bg-secondary"
                           )}
                           onClick={() => handleDateSelect(date)}
@@ -514,3 +514,5 @@ export function CalendarClientPage() {
     </>
   );
 }
+
+    
