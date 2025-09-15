@@ -73,7 +73,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </DropdownMenu>
         </header>
         <div className="flex min-h-[calc(100vh-3.5rem)] sm:min-h-[calc(100vh-4rem)]">
-          <Sidebar className="border-r">
+          <Sidebar className="border-r bg-card">
             <SidebarHeader className="p-4 mt-2">
               <Link href="/calendar" className="flex items-center gap-2">
                 <Icons.Logo className="w-8 h-8 text-primary" />
