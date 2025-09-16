@@ -23,6 +23,9 @@ const GenerateContentPlanInputSchema = z.object({
     .describe(
       'The desired post frequency (e.g., 3x a week, 10x a month) that represents how often the user wants to post.'
     ),
+    title: z.string().describe('The target title for the content series.'),
+    description: z.string().describe('A detailed description of the content to be generated.'),
+    tone: z.string().describe('The desired tone for the generated posts.'),
 });
 export type GenerateContentPlanInput = z.infer<
   typeof GenerateContentPlanInputSchema
@@ -48,19 +51,25 @@ const generateContentPlanPrompt = ai.definePrompt({
   name: 'generateContentPlanPrompt',
   input: {schema: GenerateContentPlanInputSchema},
   output: {schema: GenerateContentPlanOutputSchema},
-  prompt: `You are an AI assistant designed to help users create a content plan for a week.
+  prompt: `You are an AI assistant designed to help users create a content plan based on a central theme.
+
+  The user wants to create a series of posts with the target title: "{{title}}".
+  Here is the description of the content they want: "{{description}}".
+  The desired tone for the posts is: "{{tone}}".
 
   The user has the following topic preferences: {{topicPreferences}}
   The user wants to post {{postFrequency}}.
 
-  Generate a list of 5 tweet ideas based on the user's preferences. For each post, provide:
-  - A title (for internal tracking)
-  - The tweet content.
-  - A dayOffset from today (between 1 and 7).
-  - A status for the post (should be 'Draft').
-  - An autoPublish recommendation (true or false).
+  Generate a list of tweet ideas based on the provided title, description, and tone. The posts should feel like a cohesive series but each should be unique and stand on its own.
 
-  The tweet ideas should sound natural, be engaging, and be relevant to the user's chosen topics. Make them varied and interesting.
+  For each post, provide:
+  - A title (for internal tracking, it should be a variation of the main title e.g. "{{title}} - Part 1")
+  - The tweet content.
+  - A dayOffset from today (a unique number for each post, starting from 1).
+  - A status for the post (should be 'Draft').
+  - An autoPublish recommendation (always false).
+
+  The tweet ideas should sound natural, be engaging, and be relevant to the user's chosen topics and the provided context.
   `,
 });
 

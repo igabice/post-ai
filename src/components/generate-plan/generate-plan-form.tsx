@@ -136,7 +136,10 @@ export function GeneratePlanForm() {
       try {
         const result = await generateContentPlan({
           topicPreferences: user.topicPreferences,
-          postFrequency: `${postDates.length} posts`,
+          postFrequency: `${postDates.length} posts over the selected period`,
+          title: data.title,
+          description: data.description,
+          tone: data.tone,
         });
 
         if (result.posts && result.posts.length > 0) {
@@ -145,7 +148,6 @@ export function GeneratePlanForm() {
                return {
                  ...post,
                  id: `temp-${index}`, // Temporary ID
-                 title: `${data.title} - Part ${index + 1}`,
                  date: postDates[index],
                  status: 'Draft' as const,
                  autoPublish: false,
