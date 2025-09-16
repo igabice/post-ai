@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { addDays, format } from 'date-fns';
@@ -88,7 +89,7 @@ export function GeneratePlanForm() {
     },
   });
 
-  const { fields, control } = useFieldArray({
+  const { fields } = useFieldArray({
     control: form.control,
     name: 'schedule',
   });
