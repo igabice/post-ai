@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -80,7 +81,7 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
         <Sidebar className="border-r bg-card">
           <SidebarHeader className="p-4 mt-2">
             <Link href="/calendar" className="flex items-center gap-2">
-              <Icons.Logo className="w-8 h-8 text-primary" />
+              <Icons.Logo className="w-8 h-8" />
               <span className="font-bold text-lg group-data-[collapsible=icon]:hidden">
                 Content Compass
               </span>
