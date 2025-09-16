@@ -21,6 +21,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 const postSchema = z.object({
   id: z.string(),
@@ -140,9 +142,13 @@ export default function PreviewPlanPage() {
                         control={form.control}
                         name={`posts.${index}.autoPublish`}
                         render={({ field }) => (
-                            <div className="flex items-center gap-2">
-                                <label>Auto-publish:</label>
-                                <Badge variant={field.value ? 'default' : 'secondary'}>{field.value ? 'On' : 'Off'}</Badge>
+                            <div className="flex items-center space-x-2">
+                               <Switch
+                                id={`posts.${index}.autoPublish`}
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                               />
+                               <Label htmlFor={`posts.${index}.autoPublish`}>Auto-publish</Label>
                             </div>
                         )}
                     />
