@@ -32,30 +32,30 @@ export default function ContentPlansPage() {
       {contentPlans.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {contentPlans.map((plan) => (
-            <Card key={plan.id}>
-              <CardHeader>
-                <CardTitle className="truncate" title={plan.title}>{plan.title}</CardTitle>
-                <CardDescription>Generated on {format(plan.createdAt, 'MMMM d, yyyy')}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                 <p className="text-sm text-muted-foreground line-clamp-3">{plan.description}</p>
-                 <div className="flex flex-col gap-2">
-                    <div className="flex items-center text-sm text-muted-foreground gap-2">
-                        <CalendarRange className="h-4 w-4" />
-                        <span>{format(plan.startDate, 'MMM d')} - {format(plan.endDate, 'MMM d, yyyy')}</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                        <Badge variant="outline">{plan.tone} Tone</Badge>
-                        <Badge variant="secondary">{plan.postIds.length} Posts</Badge>
-                    </div>
-                 </div>
-              </CardContent>
-              <CardFooter>
-                 <Button variant="outline" size="sm" asChild>
-                    <Link href="/calendar">View Posts in Calendar</Link>
-                </Button>
-              </CardFooter>
-            </Card>
+            <Link href={`/content-plans/${plan.id}`} key={plan.id} className="block hover:shadow-lg transition-shadow rounded-lg">
+                <Card className="h-full flex flex-col">
+                  <CardHeader>
+                    <CardTitle className="truncate" title={plan.title}>{plan.title}</CardTitle>
+                    <CardDescription>Generated on {format(plan.createdAt, 'MMMM d, yyyy')}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4 flex-1">
+                     <p className="text-sm text-muted-foreground line-clamp-3">{plan.description}</p>
+                     <div className="flex flex-col gap-2">
+                        <div className="flex items-center text-sm text-muted-foreground gap-2">
+                            <CalendarRange className="h-4 w-4" />
+                            <span>{format(plan.startDate, 'MMM d')} - {format(plan.endDate, 'MMM d, yyyy')}</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            <Badge variant="outline">{plan.tone} Tone</Badge>
+                            <Badge variant="secondary">{plan.postIds.length} Posts</Badge>
+                        </div>
+                     </div>
+                  </CardContent>
+                  <CardFooter>
+                    <span className="text-sm text-primary hover:underline">View Plan Details &rarr;</span>
+                  </CardFooter>
+                </Card>
+            </Link>
           ))}
         </div>
       ) : (
