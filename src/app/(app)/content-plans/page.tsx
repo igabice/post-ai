@@ -34,7 +34,7 @@ export default function ContentPlansPage() {
           {contentPlans.map((plan) => (
             <Card key={plan.id}>
               <CardHeader>
-                <CardTitle>{plan.title}</CardTitle>
+                <CardTitle className="truncate" title={plan.title}>{plan.title}</CardTitle>
                 <CardDescription>Generated on {format(plan.createdAt, 'MMMM d, yyyy')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
