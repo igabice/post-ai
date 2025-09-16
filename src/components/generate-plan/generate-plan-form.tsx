@@ -31,11 +31,11 @@ import {
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '../ui/textarea';
-import { DateRange } from 'react-day-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn } from '@/lib/utils';
 import { Calendar } from '../ui/calendar';
 import { generateContentPlan } from '../calendar/actions';
+import { Post } from '@/lib/types';
 
 const availableDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -67,13 +67,15 @@ const generatePlanSchema = z.object({
   ),
 });
 
+type FormData = z.infer<typeof generatePlanSchema>;
+
 export function GeneratePlanForm() {
   const { user, setGeneratedPosts } = useApp();
   const { toast } = useToast();
   const router = useRouter();
   const [isGenerating, startGeneration] = useTransition();
 
-  const form = useForm<z.infer<typeof generatePlanSchema>>({
+  const form = useForm<FormData>({
     resolver: zodResolver(generatePlanSchema),
     defaultValues: {
       title: '',
@@ -93,9 +95,8 @@ export function GeneratePlanForm() {
     control: form.control,
     name: 'schedule',
   });
-
-  async function onSubmit(data: z.infer<typeof generatePlanSchema>) {
-    startGeneration(async () => {
+  
+  const getPostDates = (data: FormData): Date[] => {
       const { dateRange, schedule } = data;
       const postDates: Date[] = [];
 
@@ -123,6 +124,29 @@ export function GeneratePlanForm() {
       }
       
       postDates.sort((a, b) => a.getTime() - b.getTime());
+      return postDates;
+  }
+  
+  const navigateToPreview = (posts: Omit<Post, 'id' | 'analytics'>[], data: FormData) => {
+      const postsToPreview = posts.map((post, index) => ({
+        ...post,
+        id: `temp-${index}`,
+        analytics: { impressions: 0, likes: 0, retweets: 0 },
+      }));
+
+      setGeneratedPosts(postsToPreview);
+      const queryParams = new URLSearchParams({
+          title: data.title,
+          description: data.description,
+          tone: data.tone,
+      }).toString();
+
+      router.push(`/generate-plan/preview?${queryParams}`);
+  }
+
+  const handleGenerateWithAI = (data: FormData) => {
+    startGeneration(async () => {
+      const postDates = getPostDates(data);
 
       if (postDates.length === 0) {
         toast({
@@ -143,29 +167,13 @@ export function GeneratePlanForm() {
         });
 
         if (result.posts && result.posts.length > 0) {
-           const postsToPreview = result.posts.map((post, index) => {
-             if (postDates[index]) {
-               return {
-                 ...post,
-                 id: `temp-${index}`, // Temporary ID
-                 date: postDates[index],
-                 status: 'Draft' as const,
-                 autoPublish: false,
-                 analytics: { impressions: 0, likes: 0, retweets: 0 },
-               };
-             }
-             return null;
-           }).filter((p): p is NonNullable<typeof p> => p !== null);
-
-          setGeneratedPosts(postsToPreview);
-          const queryParams = new URLSearchParams({
-              title: data.title,
-              description: data.description,
-              tone: data.tone,
-          }).toString();
-
-          router.push(`/generate-plan/preview?${queryParams}`);
-
+           const aiPosts = result.posts.map((post, index) => {
+             return {
+               ...post,
+               date: postDates[index] || new Date(), // Fallback, though should always have a date
+             };
+           });
+           navigateToPreview(aiPosts, data);
         } else {
           toast({
             title: 'Error',
@@ -184,9 +192,42 @@ export function GeneratePlanForm() {
     });
   }
 
+  const handleContinueWithoutAI = async () => {
+      const isValid = await form.trigger();
+      if (!isValid) {
+          toast({
+              title: "Form is incomplete",
+              description: "Please fill out all required fields before continuing.",
+              variant: "destructive",
+          });
+          return;
+      }
+      const data = form.getValues();
+      const postDates = getPostDates(data);
+
+      if (postDates.length === 0) {
+        toast({
+          title: 'No dates selected',
+          description: 'Please select at least one valid future date to schedule posts.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const emptyPosts = postDates.map((date, index) => ({
+          title: `${data.title} - Part ${index + 1}`,
+          content: '',
+          date: date,
+          status: 'Draft' as const,
+          autoPublish: false,
+      }));
+
+      navigateToPreview(emptyPosts, data);
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
+      <form onSubmit={form.handleSubmit(handleGenerateWithAI)}>
         <Card>
           <CardHeader>
             <CardTitle>Content Details</CardTitle>
@@ -290,7 +331,7 @@ export function GeneratePlanForm() {
                         defaultMonth={field.value.from}
                         selected={{ from: field.value.from, to: field.value.to }}
                         onSelect={(range) => {
-                           if (range) {
+                           if (range?.from && range?.to) {
                              form.setValue('dateRange', range as { from: Date; to: Date; });
                            }
                         }}
@@ -363,10 +404,13 @@ export function GeneratePlanForm() {
               )}
             />
           </CardContent>
-          <CardFooter className="border-t px-6 py-4">
+          <CardFooter className="border-t px-6 py-4 flex items-center gap-2">
             <Button type="submit" disabled={isGenerating}>
               {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
               Generate Posts
+            </Button>
+             <Button type="button" variant="secondary" onClick={handleContinueWithoutAI} disabled={isGenerating}>
+              Continue without AI
             </Button>
           </CardFooter>
         </Card>
