@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useTransition, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
+import Link from 'next/link';
 import { format, isSameDay } from 'date-fns';
 import { DateRange } from 'react-day-picker';
-import { Calendar as CalendarIcon, List, Plus, Sparkles, Loader2, MoreHorizontal, Copy, Trash2, Pencil, ChevronDown, X, Eye } from 'lucide-react';
+import { Calendar as CalendarIcon, List, Plus, Sparkles, MoreHorizontal, Copy, Trash2, Pencil, ChevronDown, X, Eye } from 'lucide-react';
 import { useApp } from '@/context/app-provider';
 
 import { Button } from '@/components/ui/button';
@@ -19,15 +20,13 @@ import { PostSheet } from './post-sheet';
 import type { Post, PostStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { generateContentPlan } from './actions';
 import { Separator } from '../ui/separator';
 
 export function CalendarClientPage() {
-  const { posts, addPost, user, deletePost, copyPost } = useApp();
+  const { posts, deletePost, copyPost } = useApp();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [activePost, setActivePost] = useState<Post | null>(null);
-  const [isGeneratingPlan, startPlanGeneration] = useTransition();
   const [isPostListDialogOpen, setIsPostListDialogOpen] = useState(false);
   const [postsForSelectedDay, setPostsForSelectedDay] = useState<Post[]>([]);
   const [statusFilter, setStatusFilter] = useState<PostStatus | 'All'>('All');
@@ -85,35 +84,6 @@ export function CalendarClientPage() {
     });
   };
 
-  const handleGeneratePlan = () => {
-    startPlanGeneration(async () => {
-        const result = await generateContentPlan({
-            topicPreferences: user.topicPreferences,
-            postFrequency: user.postFrequency,
-        });
-
-        if(result.posts) {
-            result.posts.forEach(post => {
-                addPost({
-                    ...post,
-                    id: new Date().toISOString() + Math.random(),
-                    analytics: { likes: 0, retweets: 0, impressions: 0 },
-                });
-            });
-            toast({
-                title: 'Content Plan Generated',
-                description: `${result.posts.length} new posts have been added to your calendar as drafts.`
-            });
-        } else {
-             toast({
-                title: 'Error',
-                description: 'Could not generate a content plan. Please try again.',
-                variant: 'destructive',
-            });
-        }
-    });
-  }
-
   const filteredPosts = useMemo(() => posts
     .filter(post => {
       const statusMatch = statusFilter === 'All' || post.status === statusFilter;
@@ -145,34 +115,19 @@ export function CalendarClientPage() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h1 className="text-3xl font-bold tracking-tight">Content Calendar</h1>
-          <Button onClick={() => handleNewPost()}>
-            <Plus className="mr-2 h-4 w-4" />
-            Create Post
-          </Button>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles />
-              Generate Content Plan
-            </CardTitle>
-            <CardDescription>
-              Let AI create a week's worth of content ideas based on your profile preferences.
-              Posts will be added as drafts for you to review.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={handleGeneratePlan} disabled={isGeneratingPlan}>
-              {isGeneratingPlan ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkles className="mr-2 h-4 w-4" />
-              )}
-              Generate Weekly Plan
+          <div className="flex items-center gap-2">
+            <Button variant="outline" asChild>
+                <Link href="/generate-plan">
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Generate Plan
+                </Link>
             </Button>
-          </CardContent>
-        </Card>
+            <Button onClick={() => handleNewPost()}>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Post
+            </Button>
+          </div>
+        </div>
 
         <Tabs defaultValue="calendar" className="w-full">
           <div className="flex justify-between items-center mb-4">
@@ -226,7 +181,7 @@ export function CalendarClientPage() {
                     months: 'flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0',
                     month: 'space-y-4 w-full',
                     table: 'w-full border-collapse space-y-1',
-                    head_row: 'flex',
+                    head_row: 'flex w-full',
                     head_cell: 'text-muted-foreground rounded-md w-full font-normal text-[0.8rem]',
                     row: 'flex w-full mt-2',
                     cell: 'h-24 w-full text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-background/80 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20',
