@@ -139,6 +139,8 @@ export function GeneratePlanForm() {
           title: data.title,
           description: data.description,
           tone: data.tone,
+          startDate: data.dateRange.from.toISOString(),
+          endDate: data.dateRange.to.toISOString(),
       }).toString();
 
       router.push(`/generate-plan/preview?${queryParams}`);

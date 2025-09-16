@@ -29,6 +29,8 @@ export type ContentPlan = {
   tone: string;
   postIds: string[];
   createdAt: Date;
+  startDate: Date;
+  endDate: Date;
 }
 
 export const availableTopics = [

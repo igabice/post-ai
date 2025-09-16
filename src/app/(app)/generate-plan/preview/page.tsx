@@ -74,13 +74,17 @@ export default function PreviewPlanPage() {
     const planTitle = searchParams.get('title');
     const planDescription = searchParams.get('description');
     const planTone = searchParams.get('tone');
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
 
-    if (planTitle && planDescription && planTone) {
+    if (planTitle && planDescription && planTone && startDate && endDate) {
         addContentPlan({
             title: planTitle,
             description: planDescription,
             tone: planTone,
             postIds: newPostIds,
+            startDate: new Date(startDate),
+            endDate: new Date(endDate),
         });
     }
 

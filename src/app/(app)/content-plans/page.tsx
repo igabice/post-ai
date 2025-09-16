@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, CalendarRange } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function ContentPlansPage() {
@@ -39,9 +39,15 @@ export default function ContentPlansPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                  <p className="text-sm text-muted-foreground line-clamp-3">{plan.description}</p>
-                 <div className="flex flex-wrap gap-2">
-                    <Badge variant="outline">{plan.tone} Tone</Badge>
-                    <Badge variant="secondary">{plan.postIds.length} Posts</Badge>
+                 <div className="flex flex-col gap-2">
+                    <div className="flex items-center text-sm text-muted-foreground gap-2">
+                        <CalendarRange className="h-4 w-4" />
+                        <span>{format(plan.startDate, 'MMM d')} - {format(plan.endDate, 'MMM d, yyyy')}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        <Badge variant="outline">{plan.tone} Tone</Badge>
+                        <Badge variant="secondary">{plan.postIds.length} Posts</Badge>
+                    </div>
                  </div>
               </CardContent>
               <CardFooter>
