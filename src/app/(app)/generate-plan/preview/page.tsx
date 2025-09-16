@@ -120,11 +120,11 @@ export default function PreviewPlanPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                    <label htmlFor={`posts.${index}.title`}>Title</label>
+                    <Label htmlFor={`posts.${index}.title`}>Title</Label>
                     <Input id={`posts.${index}.title`} {...form.register(`posts.${index}.title`)} />
                 </div>
                 <div className="space-y-2">
-                    <label htmlFor={`posts.${index}.content`}>Content</label>
+                    <Label htmlFor={`posts.${index}.content`}>Content</Label>
                     <Textarea id={`posts.${index}.content`} {...form.register(`posts.${index}.content`)} className="min-h-[100px]" />
                 </div>
                 <div className="flex items-center gap-4">
@@ -133,7 +133,7 @@ export default function PreviewPlanPage() {
                         name={`posts.${index}.status`}
                         render={({ field }) => (
                             <div className="flex items-center gap-2">
-                                <label>Status:</label>
+                                <Label>Status:</Label>
                                 <Badge variant={field.value === 'Draft' ? 'outline' : 'default'}>{field.value}</Badge>
                             </div>
                         )}
