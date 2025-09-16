@@ -22,6 +22,15 @@ export type UserProfile = {
   signature?: string;
 };
 
+export type ContentPlan = {
+  id: string;
+  title: string;
+  description: string;
+  tone: string;
+  postIds: string[];
+  createdAt: Date;
+}
+
 export const availableTopics = [
   'Technology',
   'Real Estate',

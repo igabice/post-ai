@@ -158,7 +158,13 @@ export function GeneratePlanForm() {
            }).filter((p): p is NonNullable<typeof p> => p !== null);
 
           setGeneratedPosts(postsToPreview);
-          router.push('/generate-plan/preview');
+          const queryParams = new URLSearchParams({
+              title: data.title,
+              description: data.description,
+              tone: data.tone,
+          }).toString();
+
+          router.push(`/generate-plan/preview?${queryParams}`);
 
         } else {
           toast({
@@ -368,5 +374,3 @@ export function GeneratePlanForm() {
     </Form>
   );
 }
-
-    

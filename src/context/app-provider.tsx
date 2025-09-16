@@ -1,17 +1,19 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Post, UserProfile, availableTopics, availableFrequencies } from '@/lib/types';
+import { Post, UserProfile, ContentPlan, availableTopics, availableFrequencies } from '@/lib/types';
 import { user as initialUser, posts as initialPosts } from '@/lib/data';
 
 interface AppContextType {
   user: UserProfile;
   posts: Post[];
+  contentPlans: ContentPlan[];
   generatedPosts: Post[];
   setGeneratedPosts: (posts: Post[]) => void;
   updateProfile: (profile: Partial<UserProfile>) => void;
   updatePost: (postId: string, postData: Partial<Post>) => void;
-  addPost: (postData: Omit<Post, 'id' | 'analytics'>) => void;
+  addPost: (postData: Omit<Post, 'id' | 'analytics'>) => Post;
+  addContentPlan: (plan: Omit<ContentPlan, 'id' | 'createdAt'>) => void;
   deletePost: (postId: string) => void;
   copyPost: (postId: string) => void;
   availableTopics: string[];
@@ -24,6 +26,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<UserProfile>(initialUser);
   const [posts, setPosts] = useState<Post[]>(initialPosts);
+  const [contentPlans, setContentPlans] = useState<ContentPlan[]>([]);
   const [generatedPosts, setGeneratedPosts] = useState<Post[]>([]);
 
 
@@ -37,13 +40,23 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     );
   };
   
-  const addPost = (postData: Omit<Post, 'id' | 'analytics'>) => {
+  const addPost = (postData: Omit<Post, 'id' | 'analytics'>): Post => {
     const newPost: Post = {
       ...postData,
       id: new Date().toISOString() + Math.random(),
       analytics: { likes: 0, retweets: 0, impressions: 0 },
     };
     setPosts((prev) => [...prev, newPost].sort((a,b) => b.date.getTime() - a.date.getTime()));
+    return newPost;
+  };
+
+  const addContentPlan = (plan: Omit<ContentPlan, 'id' | 'createdAt'>) => {
+    const newPlan: ContentPlan = {
+      ...plan,
+      id: new Date().toISOString() + Math.random(),
+      createdAt: new Date(),
+    }
+    setContentPlans(prev => [newPlan, ...prev]);
   };
 
   const deletePost = (postId: string) => {
@@ -70,7 +83,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AppContext.Provider value={{ user, posts, updateProfile, updatePost, addPost, availableTopics, availableFrequencies, getPostById, deletePost, copyPost, generatedPosts, setGeneratedPosts }}>
+    <AppContext.Provider value={{ user, posts, contentPlans, updateProfile, updatePost, addPost, addContentPlan, availableTopics, availableFrequencies, getPostById, deletePost, copyPost, generatedPosts, setGeneratedPosts }}>
       {children}
     </AppContext.Provider>
   );
@@ -83,5 +96,3 @@ export const useApp = () => {
   }
   return context;
 };
-
-    

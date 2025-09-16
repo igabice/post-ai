@@ -3,6 +3,7 @@ import {
   CalendarDays,
   LayoutDashboard,
   User,
+  ClipboardList,
   type LucideProps,
 } from 'lucide-react';
 
@@ -13,4 +14,5 @@ export const Icons = {
   Calendar: CalendarDays,
   Dashboard: LayoutDashboard,
   Profile: User,
+  ContentPlans: ClipboardList,
 };

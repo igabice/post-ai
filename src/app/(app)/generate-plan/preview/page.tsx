@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -36,8 +36,9 @@ const formSchema = z.object({
 });
 
 export default function PreviewPlanPage() {
-  const { generatedPosts, addPost, setGeneratedPosts } = useApp();
+  const { generatedPosts, addPost, addContentPlan, setGeneratedPosts } = useApp();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -61,17 +62,32 @@ export default function PreviewPlanPage() {
   }, [generatedPosts, router, form]);
 
   const onSubmit = (data: z.infer<typeof formSchema>) => {
+    const newPostIds: string[] = [];
     data.posts.forEach((post) => {
       const { id, ...postData } = post; // remove temporary id
-      addPost(postData);
+      const newPost = addPost(postData);
+      newPostIds.push(newPost.id);
     });
+
+    const planTitle = searchParams.get('title');
+    const planDescription = searchParams.get('description');
+    const planTone = searchParams.get('tone');
+
+    if (planTitle && planDescription && planTone) {
+        addContentPlan({
+            title: planTitle,
+            description: planDescription,
+            tone: planTone,
+            postIds: newPostIds,
+        });
+    }
 
     toast({
       title: 'Content Plan Scheduled!',
       description: `${data.posts.length} new posts have been added to your calendar.`,
     });
     setGeneratedPosts([]); // Clear the temporary posts
-    router.push('/calendar');
+    router.push('/content-plans');
   };
 
   if (!generatedPosts || generatedPosts.length === 0) {
@@ -145,5 +161,3 @@ export default function PreviewPlanPage() {
     </div>
   );
 }
-
-    

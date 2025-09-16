@@ -34,6 +34,7 @@ import { Icons } from '@/components/icons';
 const navItems = [
   { href: '/calendar', icon: Icons.Calendar, label: 'Calendar' },
   { href: '/dashboard', icon: Icons.Dashboard, label: 'Dashboard' },
+  { href: '/content-plans', icon: Icons.ContentPlans, label: 'Content Plans' },
   { href: '/profile', icon: Icons.Profile, label: 'Profile' },
 ];
 
@@ -91,7 +92,7 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
                     asChild
-                    isActive={pathname === item.href}
+                    isActive={pathname === item.href || (item.href === '/content-plans' && pathname.startsWith('/generate-plan'))}
                     tooltip={item.label}
                     onClick={handleLinkClick}
                   >
