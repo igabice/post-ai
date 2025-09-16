@@ -7,6 +7,8 @@ import { user as initialUser, posts as initialPosts } from '@/lib/data';
 interface AppContextType {
   user: UserProfile;
   posts: Post[];
+  generatedPosts: Post[];
+  setGeneratedPosts: (posts: Post[]) => void;
   updateProfile: (profile: Partial<UserProfile>) => void;
   updatePost: (postId: string, postData: Partial<Post>) => void;
   addPost: (postData: Omit<Post, 'id' | 'analytics'>) => void;
@@ -22,6 +24,8 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<UserProfile>(initialUser);
   const [posts, setPosts] = useState<Post[]>(initialPosts);
+  const [generatedPosts, setGeneratedPosts] = useState<Post[]>([]);
+
 
   const updateProfile = (profile: Partial<UserProfile>) => {
     setUser((prev) => ({ ...prev, ...profile }));
@@ -39,7 +43,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       id: new Date().toISOString() + Math.random(),
       analytics: { likes: 0, retweets: 0, impressions: 0 },
     };
-    setPosts((prev) => [...prev, newPost]);
+    setPosts((prev) => [...prev, newPost].sort((a,b) => b.date.getTime() - a.date.getTime()));
   };
 
   const deletePost = (postId: string) => {
@@ -66,7 +70,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AppContext.Provider value={{ user, posts, updateProfile, updatePost, addPost, availableTopics, availableFrequencies, getPostById, deletePost, copyPost }}>
+    <AppContext.Provider value={{ user, posts, updateProfile, updatePost, addPost, availableTopics, availableFrequencies, getPostById, deletePost, copyPost, generatedPosts, setGeneratedPosts }}>
       {children}
     </AppContext.Provider>
   );
@@ -79,3 +83,5 @@ export const useApp = () => {
   }
   return context;
 };
+
+    

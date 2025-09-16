@@ -1,6 +1,6 @@
 'use client';
 
-import { useForm, Controller, useFieldArray } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { addDays, format } from 'date-fns';
@@ -67,7 +67,7 @@ const generatePlanSchema = z.object({
 });
 
 export function GeneratePlanForm() {
-  const { addPost, user } = useApp();
+  const { user, setGeneratedPosts } = useApp();
   const { toast } = useToast();
   const router = useRouter();
   const [isGenerating, startGeneration] = useTransition();
@@ -88,7 +88,7 @@ export function GeneratePlanForm() {
     },
   });
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, control } = useFieldArray({
     control: form.control,
     name: 'schedule',
   });
@@ -100,10 +100,14 @@ export function GeneratePlanForm() {
 
       let currentDate = new Date(dateRange.from);
       const endDate = new Date(dateRange.to);
+      currentDate.setHours(0, 0, 0, 0);
+      endDate.setHours(0, 0, 0, 0);
 
       while (currentDate <= endDate) {
         const dayIndex = currentDate.getDay();
-        const daySchedule = schedule[dayIndex];
+        const dayName = availableDays[dayIndex];
+        const daySchedule = schedule.find(s => s.day === dayName);
+        
         if (daySchedule && daySchedule.times.length > 0) {
           daySchedule.times.forEach((timeEntry) => {
             const [hours, minutes] = timeEntry.time.split(':').map(Number);
@@ -135,22 +139,24 @@ export function GeneratePlanForm() {
         });
 
         if (result.posts && result.posts.length > 0) {
-          result.posts.forEach((post, index) => {
-            if (postDates[index]) {
-              addPost({
-                ...post,
-                title: `${data.title} - Part ${index + 1}`,
-                date: postDates[index],
-                status: 'Draft',
-                autoPublish: false,
-              });
-            }
-          });
-          toast({
-            title: 'Content Plan Generated!',
-            description: `${result.posts.length} new posts have been added to your calendar as drafts.`,
-          });
-          router.push('/calendar');
+           const postsToPreview = result.posts.map((post, index) => {
+             if (postDates[index]) {
+               return {
+                 ...post,
+                 id: `temp-${index}`, // Temporary ID
+                 title: `${data.title} - Part ${index + 1}`,
+                 date: postDates[index],
+                 status: 'Draft' as const,
+                 autoPublish: false,
+                 analytics: { impressions: 0, likes: 0, retweets: 0 },
+               };
+             }
+             return null;
+           }).filter((p): p is NonNullable<typeof p> => p !== null);
+
+          setGeneratedPosts(postsToPreview);
+          router.push('/generate-plan/preview');
+
         } else {
           toast({
             title: 'Error',
@@ -159,9 +165,10 @@ export function GeneratePlanForm() {
           });
         }
       } catch (error) {
+        console.error("Plan generation error:", error);
         toast({
           title: 'Error',
-          description: 'An unexpected error occurred. Please try again.',
+          description: 'An unexpected error occurred during plan generation. Please try again.',
           variant: 'destructive',
         });
       }
@@ -273,7 +280,11 @@ export function GeneratePlanForm() {
                         mode="range"
                         defaultMonth={field.value.from}
                         selected={{ from: field.value.from, to: field.value.to }}
-                        onSelect={field.onChange as (range: DateRange | undefined) => void}
+                        onSelect={(range) => {
+                           if (range) {
+                             form.setValue('dateRange', range as { from: Date; to: Date; });
+                           }
+                        }}
                         numberOfMonths={2}
                       />
                     </PopoverContent>
@@ -297,7 +308,7 @@ export function GeneratePlanForm() {
                   </div>
                   <div className="space-y-4">
                     {fields.map((dayField, dayIndex) => {
-                      const dayName = availableDays[dayIndex];
+                      const dayName = dayField.day;
                       const { fields: timeFields, append: appendTime, remove: removeTime } = useFieldArray({
                         control: form.control,
                         name: `schedule.${dayIndex}.times`,
@@ -346,7 +357,7 @@ export function GeneratePlanForm() {
           <CardFooter className="border-t px-6 py-4">
             <Button type="submit" disabled={isGenerating}>
               {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-              Generate & Schedule Posts
+              Generate Posts
             </Button>
           </CardFooter>
         </Card>
@@ -354,3 +365,5 @@ export function GeneratePlanForm() {
     </Form>
   );
 }
+
+    
