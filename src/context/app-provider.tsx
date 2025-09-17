@@ -1,5 +1,5 @@
 
-"use client";
+'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useMemo, useEffect } from 'react';
 import { Post, UserProfile, ContentPlan, Team, availableTopics, availableFrequencies } from '@/lib/types';
@@ -48,22 +48,30 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
-        setUser(prevUser => {
-            // If there's an existing user in state with matching UID, it might be a refresh. Keep it.
-            if (prevUser && 'avatarUrl' in prevUser && prevUser.avatarUrl.includes(firebaseUser.uid)) {
-                return prevUser;
-            }
-            // Otherwise, this is a new login or the first time we see this user.
-            // Create a fresh user object, ready for onboarding.
-            return {
-              name: firebaseUser.displayName || 'New User',
-              avatarUrl: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/100/100`,
-              isOnboardingCompleted: false,
-              teams: [],
-              activeTeamId: '',
-              topicPreferences: [],
-              postFrequency: '',
-            };
+        setUser((currentUser) => {
+          // If a user is already in state, and it matches the Firebase user, do nothing.
+          // This prevents re-running logic on hot-reloads or minor auth state changes.
+          if (currentUser && currentUser.avatarUrl.includes(firebaseUser.uid)) {
+            return currentUser;
+          }
+
+          // Otherwise, we have a new user session.
+          // We will create a base user object. The `RootPage` logic will determine
+          // if they need to be redirected to onboarding or the calendar.
+          // The `isOnboardingCompleted` flag will be retrieved from a data source
+          // in a real app, but here we'll default it to false for new users.
+          return {
+            name: firebaseUser.displayName || 'New User',
+            avatarUrl: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/100/100`,
+            // This flag is the key. A real app would load this from a DB.
+            // For this demo, we assume a user from Firebase Auth is new until they complete onboarding.
+            isOnboardingCompleted: false, 
+            teams: [],
+            activeTeamId: '',
+            topicPreferences: [],
+            postFrequency: '',
+            signature: '',
+          };
         });
       } else {
         setUser(null);
@@ -72,6 +80,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     return () => unsubscribe();
   }, []);
+
 
   const isOnboardingCompleted = useMemo(() => user?.isOnboardingCompleted || false, [user]);
 
