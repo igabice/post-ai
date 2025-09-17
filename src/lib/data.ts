@@ -1,5 +1,7 @@
 import { subDays, addDays } from 'date-fns';
-import type { Post, UserProfile } from './types';
+import type { Post, UserProfile, Team } from './types';
+
+const defaultTeam: Team = { id: 'team-1', name: 'Personal Account', description: 'Your personal content workspace.' };
 
 export const user: UserProfile = {
   name: 'Alex Doe',
@@ -7,6 +9,8 @@ export const user: UserProfile = {
   topicPreferences: ['Technology', 'AI & Machine Learning', 'Startups'],
   postFrequency: '5x a week',
   signature: '🚀 Alex | Building in Public',
+  teams: [defaultTeam],
+  activeTeamId: 'team-1',
 };
 
 const today = new Date();
@@ -14,6 +18,7 @@ const today = new Date();
 export const posts: Post[] = [
   {
     id: '1',
+    teamId: 'team-1',
     date: subDays(today, 15),
     title: "The Future of AI in SaaS",
     content: "Just read a fascinating study on AI's impact on the SaaS industry. The potential for personalization is staggering. Are you leveraging AI in your products? #AI #SaaS #Tech",
@@ -23,6 +28,7 @@ export const posts: Post[] = [
   },
   {
     id: '2',
+    teamId: 'team-1',
     date: subDays(today, 12),
     title: "VC Funding Trends Q2",
     content: "Seed stage funding seems to be picking up, especially for AI-native companies. A good sign for innovation! #VentureCapital #Startups #Funding",
@@ -32,6 +38,7 @@ export const posts: Post[] = [
   },
   {
     id: '3',
+    teamId: 'team-1',
     date: subDays(today, 10),
     title: "Productivity Hack: The Pomodoro Technique",
     content: "Feeling overwhelmed? Try the Pomodoro Technique. 25 minutes of focused work, 5-minute break. It's a game-changer for my deep work sessions. #Productivity #WorkSmarter",
@@ -41,6 +48,7 @@ export const posts: Post[] = [
   },
   {
     id: '4',
+    teamId: 'team-1',
     date: subDays(today, 7),
     title: "Remote Work is Here to Stay",
     content: "The debate is over. Hybrid and remote models are the future. The companies that embrace it will win the talent war. What's your company's policy? #FutureOfWork #RemoteWork",
@@ -50,6 +58,7 @@ export const posts: Post[] = [
   },
   {
     id: '5',
+    teamId: 'team-1',
     date: subDays(today, 4),
     title: "The Rise of Vertical AI",
     content: "Generic AI is powerful, but vertical AI trained on specific industry data is where the real value is. We're seeing it in legal tech, fintech, and more. #AI #Innovation",
@@ -59,6 +68,7 @@ export const posts: Post[] = [
   },
   {
     id: '6',
+    teamId: 'team-1',
     date: subDays(today, 1),
     title: "Is 'Build in Public' Overrated?",
     content: "Thinking about the 'build in public' movement. Is the transparency worth the competitive risk? What are your thoughts? #StartupLife #Founder",
@@ -68,6 +78,7 @@ export const posts: Post[] = [
   },
   {
     id: '7',
+    teamId: 'team-1',
     date: today,
     title: "Tuesday's How-To Tip",
     content: "Quick Tip: Use keyboard shortcuts to speed up your workflow. My favorite is Cmd+K. What's yours? #DevTips #Efficiency",
@@ -77,6 +88,7 @@ export const posts: Post[] = [
   },
   {
     id: '8',
+    teamId: 'team-1',
     date: addDays(today, 2),
     title: "The Ethics of AI",
     content: "Draft: The more powerful AI becomes, the more we need to discuss its ethical implications. Bias in algorithms is a real and pressing issue.",
@@ -86,6 +98,7 @@ export const posts: Post[] = [
   },
   {
     id: '9',
+    teamId: 'team-1',
     date: addDays(today, 4),
     title: "Friday's Industry Insight",
     content: "Draft: The creator economy is maturing. Platforms are shifting from ad-based revenue to direct monetization tools for creators. #CreatorEconomy #TechTrends",
@@ -95,6 +108,7 @@ export const posts: Post[] = [
   },
   {
     id: '10',
+    teamId: 'team-1',
     date: addDays(today, 7),
     title: "Weekly Roundup",
     content: "Plan for next week's roundup of top tech news.",

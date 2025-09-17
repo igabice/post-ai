@@ -2,6 +2,7 @@ export type PostStatus = 'Draft' | 'Scheduled' | 'Published' | 'Needs Verificati
 
 export type Post = {
   id: string;
+  teamId: string;
   date: Date;
   title: string;
   content: string;
@@ -14,16 +15,25 @@ export type Post = {
   };
 };
 
+export type Team = {
+    id: string;
+    name: string;
+    description: string;
+}
+
 export type UserProfile = {
   name: string;
   avatarUrl: string;
   topicPreferences: string[];
   postFrequency: string;
   signature?: string;
+  teams: Team[];
+  activeTeamId: string;
 };
 
 export type ContentPlan = {
   id: string;
+  teamId: string;
   title: string;
   description: string;
   tone: string;

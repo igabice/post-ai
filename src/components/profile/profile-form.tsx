@@ -1,6 +1,6 @@
 'use client';
 
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useApp } from '@/context/app-provider';
@@ -73,7 +73,7 @@ export function ProfileForm() {
         <Card>
             <CardHeader>
                 <CardTitle>Your Details</CardTitle>
-                <CardDescription>Update your personal information and content preferences.</CardDescription>
+                <CardDescription>Update your personal information and content preferences for the current team.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-8">
                  <FormField

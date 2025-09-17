@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
+import { TeamSwitcher } from '@/components/team-switcher';
 
 const navItems = [
   { href: '/calendar', icon: Icons.Calendar, label: 'Calendar' },
@@ -52,6 +53,7 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
     <>
       <header className="sticky top-0 flex h-14 items-center gap-4 border-b bg-card px-4 sm:h-16 sm:px-6 z-30 w-full">
         <SidebarTrigger className="md:hidden" />
+        <TeamSwitcher />
         <div className="flex-1">{/* Optional Header Title can go here */}</div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
