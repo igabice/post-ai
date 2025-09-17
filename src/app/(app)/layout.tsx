@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
 
 import { cn } from '@/lib/utils';
@@ -42,9 +42,20 @@ const navItems = [
 
 function AppLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { user } = useApp();
+  const { user, isOnboardingCompleted } = useApp();
   const { setOpenMobile } = useSidebar();
+  const router = useRouter();
 
+  React.useEffect(() => {
+    if (!isOnboardingCompleted) {
+      router.replace('/onboarding/step1');
+    }
+  }, [isOnboardingCompleted, router]);
+
+  if (!isOnboardingCompleted) {
+    return null; // Or a loading spinner
+  }
+  
   const handleLinkClick = () => {
     setOpenMobile(false);
   };

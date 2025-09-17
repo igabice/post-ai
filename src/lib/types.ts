@@ -29,6 +29,7 @@ export type UserProfile = {
   signature?: string;
   teams: Team[];
   activeTeamId: string;
+  isOnboardingCompleted: boolean;
 };
 
 export type ContentPlan = {

@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useMemo } from 'react';
@@ -10,6 +11,7 @@ interface AppContextType {
   contentPlans: ContentPlan[];
   generatedPosts: Post[];
   activeTeam: Team | undefined;
+  isOnboardingCompleted: boolean;
   setGeneratedPosts: (posts: Post[]) => void;
   updateProfile: (profile: Partial<Omit<UserProfile, 'teams' | 'activeTeamId'>>) => void;
   updatePost: (postId: string, postData: Partial<Post>) => void;
@@ -22,6 +24,7 @@ interface AppContextType {
   getPostById: (postId: string) => Post | undefined;
   switchTeam: (teamId: string) => void;
   addTeam: (team: Omit<Team, 'id'>) => void;
+  completeOnboarding: (userData: Omit<UserProfile, 'avatarUrl' | 'teams' | 'activeTeamId' | 'isOnboardingCompleted'>, teamData: Omit<Team, 'id'>) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -31,6 +34,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [allPosts, setAllPosts] = useState<Post[]>(initialPosts);
   const [allContentPlans, setAllContentPlans] = useState<ContentPlan[]>([]);
   const [generatedPosts, setGeneratedPosts] = useState<Post[]>([]);
+
+  const isOnboardingCompleted = useMemo(() => user.isOnboardingCompleted, [user]);
 
   const updateProfile = (profile: Partial<UserProfile>) => {
     setUser((prev) => ({ ...prev, ...profile }));
@@ -102,13 +107,27 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }));
   };
 
+  const completeOnboarding = (userData: Omit<UserProfile, 'avatarUrl' | 'teams' | 'activeTeamId' | 'isOnboardingCompleted'>, teamData: Omit<Team, 'id'>) => {
+    const newTeam: Team = {
+      ...teamData,
+      id: new Date().toISOString() + Math.random(),
+    };
+    setUser(prev => ({
+      ...prev,
+      ...userData,
+      teams: [newTeam],
+      activeTeamId: newTeam.id,
+      isOnboardingCompleted: true,
+    }));
+  };
+
   const activeTeam = useMemo(() => user.teams.find(t => t.id === user.activeTeamId), [user.teams, user.activeTeamId]);
 
   const posts = useMemo(() => allPosts.filter(p => p.teamId === user.activeTeamId), [allPosts, user.activeTeamId]);
   const contentPlans = useMemo(() => allContentPlans.filter(p => p.teamId === user.activeTeamId), [allContentPlans, user.activeTeamId]);
 
   return (
-    <AppContext.Provider value={{ user, posts, contentPlans, updateProfile, updatePost, addPost, addContentPlan, availableTopics, availableFrequencies, getPostById, deletePost, copyPost, generatedPosts, setGeneratedPosts, activeTeam, switchTeam, addTeam }}>
+    <AppContext.Provider value={{ user, posts, contentPlans, updateProfile, updatePost, addPost, addContentPlan, availableTopics, availableFrequencies, getPostById, deletePost, copyPost, generatedPosts, setGeneratedPosts, activeTeam, switchTeam, addTeam, isOnboardingCompleted, completeOnboarding }}>
       {children}
     </AppContext.Provider>
   );

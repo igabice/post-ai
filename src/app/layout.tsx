@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { AppProvider } from '@/context/app-provider';
+import { OnboardingProvider } from '@/context/onboarding-provider';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 
@@ -18,7 +19,9 @@ export default function RootLayout({
       <head />
       <body className="font-body antialiased">
         <AppProvider>
-          {children}
+          <OnboardingProvider>
+            {children}
+          </OnboardingProvider>
           <Toaster />
         </AppProvider>
       </body>
