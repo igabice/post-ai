@@ -44,33 +44,36 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [allPosts, setAllPosts] = useState<Post[]>(initialPosts);
   const [allContentPlans, setAllContentPlans] = useState<ContentPlan[]>([]);
   const [generatedPosts, setGeneratedPosts] = useState<Post[]>([]);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
-        setUser((currentUser) => {
-          // If user is already in state and onboarded, do nothing to avoid resetting on hot-reloads.
-          if (currentUser?.isOnboardingCompleted) {
-            return currentUser;
+        // This is the simplified, correct logic.
+        // When a user is authenticated, create their profile.
+        const newUserProfile: UserProfile = {
+          name: firebaseUser.displayName || 'New User',
+          avatarUrl: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/100/100`,
+          isOnboardingCompleted: false, // Will be updated in onboarding
+          teams: [],
+          activeTeamId: '',
+          topicPreferences: [],
+          postFrequency: '',
+          signature: '',
+        };
+        setUser(prevUser => {
+          // Only update if it's a new login to prevent state churn on hot-reloads of an already logged-in user.
+          if (!prevUser || prevUser.name !== newUserProfile.name) {
+            return newUserProfile;
           }
-          // Otherwise, we have a new login or a page refresh for a non-onboarded user.
-          // Create a new user profile object.
-          const newUserProfile: UserProfile = {
-            name: firebaseUser.displayName || 'New User',
-            avatarUrl: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/100/100`,
-            isOnboardingCompleted: false, 
-            teams: [],
-            activeTeamId: '',
-            topicPreferences: [],
-            postFrequency: '',
-            signature: '',
-          };
-          return newUserProfile;
+          return prevUser;
         });
+
       } else {
         // User is signed out.
         setUser(null);
       }
+      setAuthChecked(true); // Mark authentication as checked
     });
 
     return () => unsubscribe();
@@ -208,8 +211,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     signOut 
   };
 
-  if (user === undefined) {
-    return null;
+  if (!authChecked) {
+    return null; // Render nothing until auth state is determined
   }
 
   return (

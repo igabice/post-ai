@@ -8,19 +8,18 @@ export default function RootPage() {
     const { user, isOnboardingCompleted } = useApp();
 
     useEffect(() => {
-        // useApp provider now handles the initial undefined state.
-        // So we can directly check for user object or null.
-        if (user) {
+        if (user === null) {
+            redirect('/login');
+        } else if (user) {
             if (isOnboardingCompleted) {
                 redirect('/calendar');
             } else {
                 redirect('/onboarding/step1');
             }
-        } else {
-            redirect('/login');
         }
+        // If user is undefined, it means we're still waiting for the auth state, so we do nothing.
     }, [user, isOnboardingCompleted]);
 
-    // Render nothing, or a loading spinner, while the redirect is happening.
+    // Render nothing, or a loading spinner, while the initial auth check and redirect is happening.
     return null; 
 }
