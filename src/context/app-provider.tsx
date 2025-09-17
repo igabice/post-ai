@@ -48,33 +48,24 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
-        // A user is signed in. Create the user profile object.
-        const newUserProfile: UserProfile = {
-          name: firebaseUser.displayName || 'New User',
-          avatarUrl: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/100/100`,
-          // This flag will be updated after onboarding.
-          // A real app might check a database to see if the user exists.
-          isOnboardingCompleted: false, 
-          teams: [],
-          activeTeamId: '',
-          topicPreferences: [],
-          postFrequency: '',
-          signature: '',
-        };
-        
         setUser((currentUser) => {
-          // Check if there's already a user in state. If the UID matches,
-          // and they have completed onboarding, we can avoid resetting their state.
-          // This handles cases like page reloads for an existing, onboarded user.
-          if (currentUser?.avatarUrl.includes(firebaseUser.uid) && currentUser.isOnboardingCompleted) {
+          if (currentUser?.isOnboardingCompleted) {
             return currentUser;
           }
-          // Otherwise, set the new user profile. This path is taken for first-time logins.
+          const newUserProfile: UserProfile = {
+            name: firebaseUser.displayName || 'New User',
+            avatarUrl: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/100/100`,
+            isOnboardingCompleted: false, 
+            teams: [],
+            activeTeamId: '',
+            topicPreferences: [],
+            postFrequency: '',
+            signature: '',
+          };
           return newUserProfile;
         });
 
       } else {
-        // No user is signed in.
         setUser(null);
       }
     });
@@ -171,13 +162,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }));
   };
   
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = () => {
     const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-    } catch (error) {
+    signInWithPopup(auth, provider).catch((error) => {
       console.error("Error signing in with Google", error);
-    }
+    });
   };
 
   const signOut = async () => {
@@ -219,9 +208,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     signOut 
   };
 
-  // Render children only when auth state is determined
   if (user === undefined) {
-    return null; // or a loading screen
+    return null;
   }
 
   return (
