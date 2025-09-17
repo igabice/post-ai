@@ -49,11 +49,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
         setUser((currentUser) => {
-          // If the user is already logged in and onboarded, no need to do anything.
+          // If user is already in state and onboarded, do nothing to avoid resetting on hot-reloads.
           if (currentUser?.isOnboardingCompleted) {
             return currentUser;
           }
-          // Otherwise, create a new profile for the newly signed-in user.
+          // Otherwise, we have a new login or a page refresh for a non-onboarded user.
+          // Create a new user profile object.
           const newUserProfile: UserProfile = {
             name: firebaseUser.displayName || 'New User',
             avatarUrl: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/100/100`,
@@ -66,8 +67,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           };
           return newUserProfile;
         });
-
       } else {
+        // User is signed out.
         setUser(null);
       }
     });
@@ -171,13 +172,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  const signOut = async () => {
-    try {
-      await firebaseSignOut(auth);
-      setUser(null);
-    } catch (error) {
+  const signOut = () => {
+    firebaseSignOut(auth).catch((error) => {
       console.error("Error signing out", error);
-    }
+    });
   };
 
 
