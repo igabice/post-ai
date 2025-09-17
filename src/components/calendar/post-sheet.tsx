@@ -147,43 +147,44 @@ export function PostSheet({ isOpen, setIsOpen, post, selectedDate }: PostSheetPr
           </SheetDescription>
         </SheetHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col gap-4 overflow-y-auto p-1">
-          <Collapsible open={isCollapsibleOpen} onOpenChange={setIsCollapsibleOpen}>
-            <CollapsibleTrigger asChild>
-                <Button variant="outline" type="button" className="w-full justify-between">
-                    <div className="flex items-center gap-2">
-                        <Sparkles />
-                        Auto-fill with AI suggestion
-                    </div>
-                    <ChevronDown className={`transform transition-transform ${isCollapsibleOpen ? 'rotate-180' : ''}`} />
-                </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-4 p-4 border border-t-0 rounded-b-md">
-                <div className="space-y-2">
-                    <Label htmlFor="ai-summary">Short Summary (optional)</Label>
-                    <Textarea id="ai-summary" placeholder="e.g., A tweet about the future of AI" value={aiSummary} onChange={(e) => setAiSummary(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="ai-tone">Tone</Label>
-                     <Select onValueChange={setAiTone} value={aiTone}>
-                        <SelectTrigger id="ai-tone">
-                            <SelectValue placeholder="Select a tone" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="Playful">Playful</SelectItem>
-                            <SelectItem value="Professional">Professional</SelectItem>
-                            <SelectItem value="Casual">Casual</SelectItem>
-                            <SelectItem value="Enthusiastic">Enthusiastic</SelectItem>
-                            <SelectItem value="Serious">Serious</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-                 <Button type="button" onClick={handleAutofill} disabled={isAutofillPending} className="w-full">
-                    {isAutofillPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                    Generate
-                </Button>
-            </CollapsibleContent>
-          </Collapsible>
-
+          <div className="border rounded-md">
+            <Collapsible open={isCollapsibleOpen} onOpenChange={setIsCollapsibleOpen}>
+              <CollapsibleTrigger asChild>
+                  <Button variant="ghost" type="button" className="w-full justify-between p-4">
+                      <div className="flex items-center gap-2">
+                          <Sparkles className="text-primary"/>
+                          <span className="font-semibold">Auto-fill with AI suggestion</span>
+                      </div>
+                      <ChevronDown className={`transform transition-transform ${isCollapsibleOpen ? 'rotate-180' : ''}`} />
+                  </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-4 p-4 border-t">
+                  <div className="space-y-2">
+                      <Label htmlFor="ai-summary">Short Summary (optional)</Label>
+                      <Textarea id="ai-summary" placeholder="e.g., A tweet about the future of AI" value={aiSummary} onChange={(e) => setAiSummary(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                      <Label htmlFor="ai-tone">Tone</Label>
+                       <Select onValueChange={setAiTone} value={aiTone}>
+                          <SelectTrigger id="ai-tone">
+                              <SelectValue placeholder="Select a tone" />
+                          </SelectTrigger>
+                          <SelectContent>
+                              <SelectItem value="Playful">Playful</SelectItem>
+                              <SelectItem value="Professional">Professional</SelectItem>
+                              <SelectItem value="Casual">Casual</SelectItem>
+                              <SelectItem value="Enthusiastic">Enthusiastic</SelectItem>
+                              <SelectItem value="Serious">Serious</SelectItem>
+                          </SelectContent>
+                      </Select>
+                  </div>
+                   <Button type="button" onClick={handleAutofill} disabled={isAutofillPending} className="w-full">
+                      {isAutofillPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                      Generate
+                  </Button>
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor="title">Title (for internal tracking)</Label>
