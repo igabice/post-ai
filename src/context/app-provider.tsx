@@ -49,9 +49,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
         setUser((currentUser) => {
+          // If the user is already logged in and onboarded, no need to do anything.
           if (currentUser?.isOnboardingCompleted) {
             return currentUser;
           }
+          // Otherwise, create a new profile for the newly signed-in user.
           const newUserProfile: UserProfile = {
             name: firebaseUser.displayName || 'New User',
             avatarUrl: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/100/100`,
