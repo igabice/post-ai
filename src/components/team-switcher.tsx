@@ -56,8 +56,8 @@ export function TeamSwitcher() {
     },
   });
 
-  const onSubmit = (data: z.infer<typeof newTeamSchema>) => {
-    addTeam({
+  const onSubmit = async (data: z.infer<typeof newTeamSchema>) => {
+    await addTeam({
       name: data.name,
       description: data.description || '',
     });
