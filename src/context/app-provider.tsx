@@ -48,32 +48,33 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
+        // A user is signed in. Create the user profile object.
+        const newUserProfile: UserProfile = {
+          name: firebaseUser.displayName || 'New User',
+          avatarUrl: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/100/100`,
+          // This flag will be updated after onboarding.
+          // A real app might check a database to see if the user exists.
+          isOnboardingCompleted: false, 
+          teams: [],
+          activeTeamId: '',
+          topicPreferences: [],
+          postFrequency: '',
+          signature: '',
+        };
+        
         setUser((currentUser) => {
-          // If a user is already in state, and it matches the Firebase user, do nothing.
-          // This prevents re-running logic on hot-reloads or minor auth state changes.
-          if (currentUser && currentUser.avatarUrl.includes(firebaseUser.uid)) {
+          // Check if there's already a user in state. If the UID matches,
+          // and they have completed onboarding, we can avoid resetting their state.
+          // This handles cases like page reloads for an existing, onboarded user.
+          if (currentUser?.avatarUrl.includes(firebaseUser.uid) && currentUser.isOnboardingCompleted) {
             return currentUser;
           }
-
-          // Otherwise, we have a new user session.
-          // We will create a base user object. The `RootPage` logic will determine
-          // if they need to be redirected to onboarding or the calendar.
-          // The `isOnboardingCompleted` flag will be retrieved from a data source
-          // in a real app, but here we'll default it to false for new users.
-          return {
-            name: firebaseUser.displayName || 'New User',
-            avatarUrl: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/100/100`,
-            // This flag is the key. A real app would load this from a DB.
-            // For this demo, we assume a user from Firebase Auth is new until they complete onboarding.
-            isOnboardingCompleted: false, 
-            teams: [],
-            activeTeamId: '',
-            topicPreferences: [],
-            postFrequency: '',
-            signature: '',
-          };
+          // Otherwise, set the new user profile. This path is taken for first-time logins.
+          return newUserProfile;
         });
+
       } else {
+        // No user is signed in.
         setUser(null);
       }
     });
