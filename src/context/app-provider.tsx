@@ -57,10 +57,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         const userSnap = await getDoc(userRef);
 
         if (userSnap.exists()) {
-          const userData = userSnap.data() as UserProfile;
-          setUser(userData);
+          setUser(userSnap.data() as UserProfile);
         } else {
-          // This case is for new users who sign up but haven't completed onboarding.
+          // This is a new user, create a temporary profile for onboarding
           const newUserProfile: UserProfile = {
             uid: firebaseUser.uid,
             name: firebaseUser.displayName || 'New User',
@@ -72,7 +71,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             postFrequency: '',
             signature: '',
           };
-          // We don't save to DB yet, we wait for onboarding to complete.
+          // We don't save to DB yet, just set in state for the onboarding flow.
           setUser(newUserProfile);
         }
       } else {
@@ -202,11 +201,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
  const signInWithGoogle = () => {
     const provider = new GoogleAuthProvider();
     signInWithPopup(auth, provider)
-      .then(() => {
+      .then((result) => {
         toast({
           title: 'Login Successful!',
           description: "Welcome! Let's get you set up.",
         });
+        // The onAuthStateChanged listener will handle the user creation and state update.
       })
       .catch((error) => {
         console.error("Error signing in with Google", error);
@@ -256,7 +256,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
   
   if (user === undefined) {
-    return null; 
+    return null; // Render nothing while waiting for auth state
   }
 
   return (
