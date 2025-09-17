@@ -17,13 +17,12 @@ export type Post = {
 };
 
 export type Team = {
-    id: string; // Firestore document ID
+    id: string;
     name: string;
     description: string;
 }
 
 export type UserProfile = {
-  uid: string; // Firebase Auth UID
   name: string;
   avatarUrl: string;
   topicPreferences: string[];

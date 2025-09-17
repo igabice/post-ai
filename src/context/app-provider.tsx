@@ -4,7 +4,7 @@
 import React, { createContext, useContext, useState, ReactNode, useMemo, useEffect } from 'react';
 import { Post, UserProfile, ContentPlan, Team, availableTopics, availableFrequencies } from '@/lib/types';
 import { posts as initialPosts } from '@/lib/data';
-import { auth, db } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 import { 
   onAuthStateChanged, 
   GoogleAuthProvider, 
@@ -12,7 +12,6 @@ import {
   signOut as firebaseSignOut,
   User as FirebaseUser 
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc, collection, addDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 
@@ -24,7 +23,7 @@ interface AppContextType {
   activeTeam: Team | undefined;
   isOnboardingCompleted: boolean;
   setGeneratedPosts: (posts: Post[]) => void;
-  updateProfile: (profile: Partial<Omit<UserProfile, 'teams' | 'activeTeamId' | 'uid'>>) => void;
+  updateProfile: (profile: Partial<Omit<UserProfile, 'teams' | 'activeTeamId'>>) => void;
   updatePost: (postId: string, postData: Partial<Post>) => void;
   addPost: (postData: Omit<Post, 'id' | 'analytics' | 'teamId'>) => Post;
   addContentPlan: (plan: Omit<ContentPlan, 'id' | 'createdAt' | 'teamId'>) => void;
@@ -33,9 +32,9 @@ interface AppContextType {
   availableTopics: string[];
   availableFrequencies: string[];
   getPostById: (postId: string) => Post | undefined;
-  switchTeam: (teamId: string) => Promise<void>;
-  addTeam: (team: Omit<Team, 'id'>) => Promise<void>;
-  completeOnboarding: (userData: Omit<UserProfile, 'avatarUrl' | 'teams' | 'activeTeamId' | 'isOnboardingCompleted' | 'uid'>, teamData: Omit<Team, 'id'>) => Promise<void>;
+  switchTeam: (teamId: string) => void;
+  addTeam: (team: Omit<Team, 'id'>) => void;
+  completeOnboarding: (userData: Omit<UserProfile, 'avatarUrl' | 'teams' | 'activeTeamId' | 'isOnboardingCompleted'>, teamData: Omit<Team, 'id'>) => void;
   signInWithGoogle: () => void;
   signOut: () => void;
 }
@@ -51,29 +50,21 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
-        const userRef = doc(db, 'users', firebaseUser.uid);
-        const userSnap = await getDoc(userRef);
-
-        if (userSnap.exists()) {
-          setUser(userSnap.data() as UserProfile);
-        } else {
-          // This is a new user, create a temporary profile for onboarding
-          const newUserProfile: UserProfile = {
-            uid: firebaseUser.uid,
-            name: firebaseUser.displayName || 'New User',
-            avatarUrl: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/100/100`,
-            isOnboardingCompleted: false,
-            teams: [],
-            activeTeamId: '',
-            topicPreferences: [],
-            postFrequency: '',
-            signature: '',
-          };
-          // We don't save to DB yet, just set in state for the onboarding flow.
-          setUser(newUserProfile);
-        }
+        // This is a simplified user creation for demonstration.
+        // In a real app, you'd fetch this from a database.
+        const newUserProfile: UserProfile = {
+          name: firebaseUser.displayName || 'New User',
+          avatarUrl: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/100/100`,
+          isOnboardingCompleted: false, // Assume false for now
+          teams: [],
+          activeTeamId: '',
+          topicPreferences: [],
+          postFrequency: '',
+          signature: '',
+        };
+        setUser(newUserProfile);
       } else {
         setUser(null);
       }
@@ -84,12 +75,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const isOnboardingCompleted = useMemo(() => user?.isOnboardingCompleted || false, [user]);
 
-  const updateProfile = async (profile: Partial<UserProfile>) => {
+  const updateProfile = (profile: Partial<UserProfile>) => {
     if (!user) return;
-    const updatedUser = { ...user, ...profile };
-    setUser(updatedUser);
-    const userRef = doc(db, 'users', user.uid);
-    await updateDoc(userRef, profile);
+    setUser((prev) => (prev ? { ...prev, ...profile } : null));
+    // In a real app, you would also save this to your database
   };
 
   const updatePost = (postId: string, postData: Partial<Post>) => {
@@ -142,72 +131,40 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return allPosts.find(p => p.id === postId);
   };
 
-  const switchTeam = async (teamId: string) => {
+  const switchTeam = (teamId: string) => {
     if (!user) return;
     setUser(prev => (prev ? {...prev, activeTeamId: teamId} : null));
-    const userRef = doc(db, 'users', user.uid);
-    await updateDoc(userRef, { activeTeamId: teamId });
   };
 
-  const addTeam = async (teamData: Omit<Team, 'id'>) => {
+  const addTeam = (teamData: Omit<Team, 'id'>) => {
     if (!user) return;
-    const teamsCollectionRef = collection(db, `users/${user.uid}/teams`);
-    const teamDocRef = await addDoc(teamsCollectionRef, teamData);
-    
-    const newTeam: Team = {
-      ...teamData,
-      id: teamDocRef.id,
-    };
-    
-    const updatedUser = {
-      ...user,
-      teams: [...user.teams, newTeam],
-      activeTeamId: newTeam.id,
-    };
-
-    setUser(updatedUser);
-    
-    const userRef = doc(db, 'users', user.uid);
-    await updateDoc(userRef, {
-        teams: updatedUser.teams,
-        activeTeamId: newTeam.id
-    });
+    const newTeam = { ...teamData, id: new Date().toISOString() };
+    setUser(prev => prev ? {
+        ...prev,
+        teams: [...prev.teams, newTeam],
+        activeTeamId: newTeam.id,
+    } : null);
   };
 
-  const completeOnboarding = async (userData: Omit<UserProfile, 'avatarUrl' | 'teams' | 'activeTeamId' | 'isOnboardingCompleted' | 'uid'>, teamData: Omit<Team, 'id'>) => {
+  const completeOnboarding = (userData: Omit<UserProfile, 'avatarUrl' | 'teams' | 'activeTeamId' | 'isOnboardingCompleted'>, teamData: Omit<Team, 'id'>) => {
     if (!user) return;
-
-    const teamDocRef = await addDoc(collection(db, `users/${user.uid}/teams`), teamData);
     const newTeam: Team = {
       ...teamData,
-      id: teamDocRef.id,
+      id: new Date().toISOString(),
     };
-
-    const finalUserProfile: UserProfile = {
-      ...user,
+    setUser(prev => prev ? {
+      ...prev,
       ...userData,
       teams: [newTeam],
       activeTeamId: newTeam.id,
       isOnboardingCompleted: true,
-    };
-    
-    const userRef = doc(db, 'users', user.uid);
-    await setDoc(userRef, finalUserProfile);
-    setUser(finalUserProfile);
-
+    } : null);
     router.push('/calendar');
   };
   
- const signInWithGoogle = () => {
+  const signInWithGoogle = () => {
     const provider = new GoogleAuthProvider();
     signInWithPopup(auth, provider)
-      .then((result) => {
-        toast({
-          title: 'Login Successful!',
-          description: "Welcome! Let's get you set up.",
-        });
-        // The onAuthStateChanged listener will handle the user creation and state update.
-      })
       .catch((error) => {
         console.error("Error signing in with Google", error);
         toast({
@@ -231,29 +188,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const posts = useMemo(() => user ? allPosts.filter(p => p.teamId === user.activeTeamId) : [], [allPosts, user]);
   const contentPlans = useMemo(() => user ? allContentPlans.filter(p => p.teamId === user.activeTeamId) : [], [allContentPlans, user]);
 
-  const value = { 
-    user, 
-    posts, 
-    contentPlans, 
-    updateProfile, 
-    updatePost, 
-    addPost, 
-    addContentPlan, 
-    availableTopics, 
-    availableFrequencies, 
-    getPostById, 
-    deletePost, 
-    copyPost, 
-    generatedPosts, 
-    setGeneratedPosts, 
-    activeTeam, 
-    switchTeam, 
-    addTeam, 
-    isOnboardingCompleted, 
-    completeOnboarding, 
-    signInWithGoogle, 
-    signOut 
-  };
+  const value = { user, posts, contentPlans, updateProfile, updatePost, addPost, addContentPlan, availableTopics, availableFrequencies, getPostById, deletePost, copyPost, generatedPosts, setGeneratedPosts, activeTeam, switchTeam, addTeam, isOnboardingCompleted, completeOnboarding, signInWithGoogle, signOut };
   
   if (user === undefined) {
     return null; // Render nothing while waiting for auth state
