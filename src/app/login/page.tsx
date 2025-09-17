@@ -56,7 +56,7 @@ export default function LoginPage() {
             </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
-            <Button onClick={signInWithGoogle}>
+            <Button onClick={signInWithGoogle} variant="destructive">
                 <Chrome className="mr-2 h-4 w-4" />
                 Sign in with Google
             </Button>
