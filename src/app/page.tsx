@@ -5,15 +5,19 @@ import { redirect } from 'next/navigation';
 import { useEffect } from 'react';
 
 export default function RootPage() {
-    const { isOnboardingCompleted } = useApp();
+    const { user, isOnboardingCompleted } = useApp();
 
     useEffect(() => {
-        if (isOnboardingCompleted) {
-            redirect('/calendar');
+        if (user) {
+            if (isOnboardingCompleted) {
+                redirect('/calendar');
+            } else {
+                redirect('/onboarding/step1');
+            }
         } else {
-            redirect('/onboarding/step1');
+            redirect('/login');
         }
-    }, [isOnboardingCompleted]);
+    }, [user, isOnboardingCompleted]);
 
     return null; // Or a loading indicator
 }

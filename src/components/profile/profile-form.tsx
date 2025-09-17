@@ -27,6 +27,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '../ui/textarea';
 import { cn } from '@/lib/utils';
+import { useEffect } from 'react';
 
 const profileSchema = z.object({
   name: z.string().min(2, {
@@ -53,12 +54,23 @@ export function ProfileForm() {
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      name: user.name,
-      postFrequency: user.postFrequency,
-      topicPreferences: user.topicPreferences,
-      signature: user.signature,
+      name: '',
+      postFrequency: '',
+      topicPreferences: [],
+      signature: '',
     },
   });
+
+  useEffect(() => {
+    if (user) {
+      form.reset({
+        name: user.name,
+        postFrequency: user.postFrequency,
+        topicPreferences: user.topicPreferences,
+        signature: user.signature,
+      });
+    }
+  }, [user, form]);
 
   function onSubmit(data: z.infer<typeof profileSchema>) {
     updateProfile(data);
@@ -66,6 +78,10 @@ export function ProfileForm() {
       title: 'Profile Updated',
       description: 'Your preferences have been saved successfully.',
     });
+  }
+  
+  if (!user) {
+    return null;
   }
 
   return (
@@ -151,7 +167,7 @@ export function ProfileForm() {
                 render={({ field }) => (
                     <FormItem>
                     <FormLabel>Desired Post Frequency</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                         <FormControl>
                         <SelectTrigger>
                             <SelectValue placeholder="Select how often you want to post" />

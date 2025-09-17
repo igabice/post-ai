@@ -1,20 +1,10 @@
+
 import { subDays, addDays } from 'date-fns';
 import type { Post, UserProfile, Team } from './types';
 
-// By default, the user has not completed onboarding.
-export const user: UserProfile = {
-  name: '',
-  avatarUrl: 'https://picsum.photos/seed/avatar1/100/100',
-  topicPreferences: [],
-  postFrequency: '',
-  signature: '',
-  teams: [],
-  activeTeamId: '',
-  isOnboardingCompleted: false,
-};
-
-const today = new Date();
+// This data is no longer used for the initial user state, 
+// as it's now handled by Firebase Auth and the onboarding flow.
 
 export const posts: Post[] = [
-  // This will be populated after onboarding
+  // This will be populated after onboarding and based on team selection
 ];

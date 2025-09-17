@@ -1,12 +1,21 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useMemo } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useMemo, useEffect } from 'react';
 import { Post, UserProfile, ContentPlan, Team, availableTopics, availableFrequencies } from '@/lib/types';
-import { user as initialUser, posts as initialPosts } from '@/lib/data';
+import { posts as initialPosts } from '@/lib/data';
+import { auth } from '@/lib/firebase';
+import { 
+  onAuthStateChanged, 
+  GoogleAuthProvider, 
+  FacebookAuthProvider,
+  signInWithPopup,
+  signOut as firebaseSignOut,
+  User as FirebaseUser 
+} from 'firebase/auth';
 
 interface AppContextType {
-  user: UserProfile;
+  user: UserProfile | null;
   posts: Post[];
   contentPlans: ContentPlan[];
   generatedPosts: Post[];
@@ -25,20 +34,48 @@ interface AppContextType {
   switchTeam: (teamId: string) => void;
   addTeam: (team: Omit<Team, 'id'>) => void;
   completeOnboarding: (userData: Omit<UserProfile, 'avatarUrl' | 'teams' | 'activeTeamId' | 'isOnboardingCompleted'>, teamData: Omit<Team, 'id'>) => void;
+  signInWithGoogle: () => void;
+  signInWithFacebook: () => void;
+  signOut: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<UserProfile>(initialUser);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [allPosts, setAllPosts] = useState<Post[]>(initialPosts);
   const [allContentPlans, setAllContentPlans] = useState<ContentPlan[]>([]);
   const [generatedPosts, setGeneratedPosts] = useState<Post[]>([]);
 
-  const isOnboardingCompleted = useMemo(() => user.isOnboardingCompleted, [user]);
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+      if (firebaseUser) {
+        // For this example, we'll merge the Firebase user with some default data.
+        // In a real app, you would fetch this user's profile from your database.
+        setUser(prevUser => ({
+          ...prevUser,
+          name: firebaseUser.displayName || 'New User',
+          avatarUrl: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/100/100`,
+          // Keep onboarding status, teams etc. from the existing state if it exists
+          // This is a simplification. A real app would have more robust logic.
+          isOnboardingCompleted: prevUser ? prevUser.isOnboardingCompleted : false,
+          teams: prevUser ? prevUser.teams : [],
+          activeTeamId: prevUser ? prevUser.activeTeamId : '',
+          topicPreferences: prevUser ? prevUser.topicPreferences : [],
+          postFrequency: prevUser ? prevUser.postFrequency : '',
+        }));
+      } else {
+        setUser(null);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const isOnboardingCompleted = useMemo(() => user?.isOnboardingCompleted || false, [user]);
 
   const updateProfile = (profile: Partial<UserProfile>) => {
-    setUser((prev) => ({ ...prev, ...profile }));
+    setUser((prev) => (prev ? { ...prev, ...profile } : null));
   };
 
   const updatePost = (postId: string, postData: Partial<Post>) => {
@@ -51,7 +88,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const newPost: Post = {
       ...postData,
       id: new Date().toISOString() + Math.random(),
-      teamId: user.activeTeamId,
+      teamId: user?.activeTeamId || '',
       analytics: { likes: 0, retweets: 0, impressions: 0 },
     };
     setAllPosts((prev) => [...prev, newPost].sort((a,b) => b.date.getTime() - a.date.getTime()));
@@ -62,7 +99,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const newPlan: ContentPlan = {
       ...plan,
       id: new Date().toISOString() + Math.random(),
-      teamId: user.activeTeamId,
+      teamId: user?.activeTeamId || '',
       createdAt: new Date(),
     }
     setAllContentPlans(prev => [newPlan, ...prev]);
@@ -92,42 +129,71 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const switchTeam = (teamId: string) => {
-    setUser(prev => ({...prev, activeTeamId: teamId}));
+    setUser(prev => (prev ? {...prev, activeTeamId: teamId} : null));
   };
 
   const addTeam = (teamData: Omit<Team, 'id'>) => {
+    if (!user) return;
     const newTeam: Team = {
       ...teamData,
       id: new Date().toISOString() + Math.random(),
     };
     setUser(prev => ({
-      ...prev,
-      teams: [...prev.teams, newTeam],
+      ...prev!,
+      teams: [...prev!.teams, newTeam],
       activeTeamId: newTeam.id,
     }));
   };
 
   const completeOnboarding = (userData: Omit<UserProfile, 'avatarUrl' | 'teams' | 'activeTeamId' | 'isOnboardingCompleted'>, teamData: Omit<Team, 'id'>) => {
+    if (!user) return;
     const newTeam: Team = {
       ...teamData,
       id: new Date().toISOString() + Math.random(),
     };
     setUser(prev => ({
-      ...prev,
+      ...prev!,
       ...userData,
       teams: [newTeam],
       activeTeamId: newTeam.id,
       isOnboardingCompleted: true,
     }));
   };
+  
+  const signInWithGoogle = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (error) {
+      console.error("Error signing in with Google", error);
+    }
+  };
 
-  const activeTeam = useMemo(() => user.teams.find(t => t.id === user.activeTeamId), [user.teams, user.activeTeamId]);
+  const signInWithFacebook = async () => {
+    const provider = new FacebookAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (error) {
+      console.error("Error signing in with Facebook", error);
+    }
+  };
 
-  const posts = useMemo(() => allPosts.filter(p => p.teamId === user.activeTeamId), [allPosts, user.activeTeamId]);
-  const contentPlans = useMemo(() => allContentPlans.filter(p => p.teamId === user.activeTeamId), [allContentPlans, user.activeTeamId]);
+  const signOut = async () => {
+    try {
+      await firebaseSignOut(auth);
+    } catch (error) {
+      console.error("Error signing out", error);
+    }
+  };
+
+
+  const activeTeam = useMemo(() => user?.teams.find(t => t.id === user.activeTeamId), [user?.teams, user?.activeTeamId]);
+
+  const posts = useMemo(() => user ? allPosts.filter(p => p.teamId === user.activeTeamId) : [], [allPosts, user]);
+  const contentPlans = useMemo(() => user ? allContentPlans.filter(p => p.teamId === user.activeTeamId) : [], [allContentPlans, user]);
 
   return (
-    <AppContext.Provider value={{ user, posts, contentPlans, updateProfile, updatePost, addPost, addContentPlan, availableTopics, availableFrequencies, getPostById, deletePost, copyPost, generatedPosts, setGeneratedPosts, activeTeam, switchTeam, addTeam, isOnboardingCompleted, completeOnboarding }}>
+    <AppContext.Provider value={{ user, posts, contentPlans, updateProfile, updatePost, addPost, addContentPlan, availableTopics, availableFrequencies, getPostById, deletePost, copyPost, generatedPosts, setGeneratedPosts, activeTeam, switchTeam, addTeam, isOnboardingCompleted, completeOnboarding, signInWithGoogle, signInWithFacebook, signOut }}>
       {children}
     </AppContext.Provider>
   );

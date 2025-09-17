@@ -79,6 +79,7 @@ export function TeamSwitcher() {
     setDialogOpen(true);
   };
 
+  if (!user) return null;
 
   return (
     <>
@@ -91,7 +92,7 @@ export function TeamSwitcher() {
             aria-label="Select a team"
             className="w-[200px] justify-between"
           >
-            <span className="truncate">{activeTeam?.name}</span>
+            <span className="truncate">{activeTeam?.name || "Select a team"}</span>
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
@@ -106,6 +107,7 @@ export function TeamSwitcher() {
                     key={team.id}
                     onSelect={() => handleTeamSelect(team.id)}
                     className="text-sm"
+                    style={{ pointerEvents: 'auto', cursor: 'pointer' }}
                   >
                     <Check
                       className={cn(
@@ -125,6 +127,7 @@ export function TeamSwitcher() {
               <CommandGroup>
                 <CommandItem
                   onSelect={handleCreateTeamSelect}
+                  style={{ pointerEvents: 'auto', cursor: 'pointer' }}
                 >
                   <PlusCircle className="mr-2 h-5 w-5" />
                   Create Team

@@ -1,3 +1,4 @@
+
 export type PostStatus = 'Draft' | 'Scheduled' | 'Published' | 'Needs Verification';
 
 export type Post = {

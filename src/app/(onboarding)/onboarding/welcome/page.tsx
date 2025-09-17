@@ -14,10 +14,15 @@ export default function WelcomePage() {
     const { user } = useApp();
 
     useEffect(() => {
-        if (!user.isOnboardingCompleted) {
+        if (!user || !user.isOnboardingCompleted) {
+            // Redirect if user is not logged in or hasn't finished onboarding
             router.replace('/onboarding/step1');
         }
-    }, [user.isOnboardingCompleted, router]);
+    }, [user, router]);
+
+    if (!user) {
+        return null;
+    }
 
   return (
     <Card className="text-center">

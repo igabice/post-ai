@@ -91,7 +91,7 @@ export function PostSheet({ isOpen, setIsOpen, post, selectedDate }: PostSheetPr
 
   const onSubmit = (data: z.infer<typeof postSchema>) => {
     let finalContent = data.content;
-    if (appendSignature && user.signature) {
+    if (appendSignature && user?.signature) {
       finalContent = `${finalContent}\n\n${user.signature}`;
     }
 
@@ -108,6 +108,7 @@ export function PostSheet({ isOpen, setIsOpen, post, selectedDate }: PostSheetPr
   };
 
   const handleGenerateFollowUps = () => {
+    if (!user) return;
     startAiTransition(async () => {
       const result = await getFollowUpSuggestions({
         initialTweet: watchedContent,
@@ -120,6 +121,7 @@ export function PostSheet({ isOpen, setIsOpen, post, selectedDate }: PostSheetPr
   };
 
   const handleAutofill = () => {
+    if (!user) return;
     startAutofillTransition(async () => {
        const result = await getTrendingTopics({
         topicPreferences: user.topicPreferences,
@@ -137,6 +139,8 @@ export function PostSheet({ isOpen, setIsOpen, post, selectedDate }: PostSheetPr
       }
     });
   };
+
+  if (!user) return null;
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -317,5 +321,3 @@ export function PostSheet({ isOpen, setIsOpen, post, selectedDate }: PostSheetPr
     </Sheet>
   );
 }
-
-    

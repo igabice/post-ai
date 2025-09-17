@@ -42,17 +42,19 @@ const navItems = [
 
 function AppLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { user, isOnboardingCompleted } = useApp();
+  const { user, isOnboardingCompleted, signOut } = useApp();
   const { setOpenMobile } = useSidebar();
   const router = useRouter();
 
   React.useEffect(() => {
-    if (!isOnboardingCompleted) {
+    if (!user) {
+      router.replace('/login');
+    } else if (!isOnboardingCompleted) {
       router.replace('/onboarding/step1');
     }
-  }, [isOnboardingCompleted, router]);
+  }, [user, isOnboardingCompleted, router]);
 
-  if (!isOnboardingCompleted) {
+  if (!user || !isOnboardingCompleted) {
     return null; // Or a loading spinner
   }
   
@@ -86,7 +88,7 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
             <DropdownMenuItem>Settings</DropdownMenuItem>
             <DropdownMenuItem>Support</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Logout</DropdownMenuItem>
+            <DropdownMenuItem onClick={signOut}>Logout</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </header>
