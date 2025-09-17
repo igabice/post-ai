@@ -42,7 +42,7 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-export const AppProvider = ({ children }: { children: ReactNode }) => {
+export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null | undefined>(undefined);
   const [allPosts, setAllPosts] = useState<Post[]>(initialPosts);
   const [allContentPlans, setAllContentPlans] = useState<ContentPlan[]>([]);
@@ -245,3 +245,5 @@ export const useApp = () => {
   }
   return context;
 };
+
+    

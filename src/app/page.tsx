@@ -28,3 +28,5 @@ export default function RootPage() {
     // Render a loading indicator or nothing while the initial auth check and redirect is happening.
     return null; 
 }
+
+    
