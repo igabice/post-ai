@@ -81,6 +81,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           const { teams, ...userProfileToSave } = newUserProfile;
           await setDoc(userRef, userProfileToSave);
           setUser(newUserProfile);
+          toast({
+              title: 'Login Successful',
+              description: "Welcome! Let's get you set up.",
+          });
         }
       } else {
         setUser(null);
@@ -88,6 +92,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
   const isOnboardingCompleted = useMemo(() => user?.isOnboardingCompleted || false, [user]);
@@ -146,13 +151,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const signInWithGoogle = () => {
     const provider = new GoogleAuthProvider();
     signInWithPopup(auth, provider)
-      .then(() => {
-          toast({
-              title: 'Login Successful',
-              description: 'Welcome back!',
-          });
-          // Navigation is handled by the useEffect watching auth state
-      })
       .catch((error) => {
         console.error("Error signing in with Google", error);
         toast({
@@ -247,5 +245,3 @@ export const useApp = () => {
   }
   return context;
 };
-
-    
