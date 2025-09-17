@@ -13,7 +13,7 @@ import {
   User as FirebaseUser 
 } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
-import { redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 interface AppContextType {
   user: UserProfile | null | undefined; // Allow undefined for initial loading state
@@ -23,7 +23,7 @@ interface AppContextType {
   activeTeam: Team | undefined;
   isOnboardingCompleted: boolean;
   setGeneratedPosts: (posts: Post[]) => void;
-  updateProfile: (profile: Partial<Omit<UserProfile, 'teams' | 'activeTeamId'>>) => void;
+  updateProfile: (profile: Partial<Omit<UserProfile, 'teams' | 'activeTeamId' | 'uid'>>) => void;
   updatePost: (postId: string, postData: Partial<Post>) => void;
   addPost: (postData: Omit<Post, 'id' | 'analytics' | 'teamId'>) => Post;
   addContentPlan: (plan: Omit<ContentPlan, 'id' | 'createdAt' | 'teamId'>) => void;
@@ -34,7 +34,7 @@ interface AppContextType {
   getPostById: (postId: string) => Post | undefined;
   switchTeam: (teamId: string) => void;
   addTeam: (team: Omit<Team, 'id'>) => void;
-  completeOnboarding: (userData: Omit<UserProfile, 'avatarUrl' | 'teams' | 'activeTeamId' | 'isOnboardingCompleted'>, teamData: Omit<Team, 'id'>) => void;
+  completeOnboarding: (userData: Omit<UserProfile, 'avatarUrl' | 'teams' | 'activeTeamId' | 'isOnboardingCompleted' | 'uid'>, teamData: Omit<Team, 'id'>) => void;
   signInWithGoogle: () => void;
   signOut: () => void;
 }
@@ -47,18 +47,19 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [allContentPlans, setAllContentPlans] = useState<ContentPlan[]>([]);
   const [generatedPosts, setGeneratedPosts] = useState<Post[]>([]);
   const { toast } = useToast();
+  const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
         setUser(prevUser => {
-          // If there's an existing user, keep their data, otherwise create a new profile.
-          // This is important for when onboarding is completed.
-          if (prevUser && prevUser.name === firebaseUser.displayName) {
+          // If user already exists in state, don't overwrite with a blank profile
+          if (prevUser && prevUser.uid === firebaseUser.uid) {
             return prevUser;
           }
-          
+          // Otherwise, create a new profile for the newly signed-in user
           const newUserProfile: UserProfile = {
+              uid: firebaseUser.uid,
               name: firebaseUser.displayName || 'New User',
               avatarUrl: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/100/100`,
               isOnboardingCompleted: false,
@@ -152,7 +153,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }));
   };
 
-  const completeOnboarding = (userData: Omit<UserProfile, 'avatarUrl' | 'teams' | 'activeTeamId' | 'isOnboardingCompleted'>, teamData: Omit<Team, 'id'>) => {
+  const completeOnboarding = (userData: Omit<UserProfile, 'avatarUrl' | 'teams' | 'activeTeamId' | 'isOnboardingCompleted' | 'uid'>, teamData: Omit<Team, 'id'>) => {
     setUser(prev => {
         if (!prev) return null;
         const newTeam: Team = {
@@ -168,7 +169,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         };
         return updatedUser;
     });
-    redirect('/calendar');
+    router.push('/calendar');
   };
   
  const signInWithGoogle = () => {
