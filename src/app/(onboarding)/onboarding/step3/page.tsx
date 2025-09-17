@@ -53,7 +53,7 @@ export default function OnboardingStep3() {
         { name, signature, topicPreferences, postFrequency },
         { name: teamName, description: teamDescription }
     );
-    router.push('/onboarding/welcome');
+    // The redirect is now handled inside completeOnboarding
   };
 
   return (

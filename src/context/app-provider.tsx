@@ -13,6 +13,7 @@ import {
   User as FirebaseUser 
 } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
+import { redirect } from 'next/navigation';
 
 interface AppContextType {
   user: UserProfile | null | undefined; // Allow undefined for initial loading state
@@ -50,26 +51,25 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
-        const newUserProfile: UserProfile = {
-            name: firebaseUser.displayName || 'New User',
-            avatarUrl: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/100/100`,
-            isOnboardingCompleted: false, // Will be updated if user data exists
-            teams: [],
-            activeTeamId: '',
-            topicPreferences: [],
-            postFrequency: '',
-            signature: '',
-        };
-        
         setUser(prevUser => {
-          // A simple way to check if we are dealing with a new login vs. a page refresh
-          // For a new login, prevUser might be null.
-          if (!prevUser || prevUser.name !== newUserProfile.name) {
-             return { ...newUserProfile, ...prevUser }; // Merge to preserve any existing state if needed, but prioritize new info
+          // If there's an existing user, keep their data, otherwise create a new profile.
+          // This is important for when onboarding is completed.
+          if (prevUser && prevUser.name === firebaseUser.displayName) {
+            return prevUser;
           }
-          return prevUser; // No change if user is same
+          
+          const newUserProfile: UserProfile = {
+              name: firebaseUser.displayName || 'New User',
+              avatarUrl: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/100/100`,
+              isOnboardingCompleted: false,
+              teams: [],
+              activeTeamId: '',
+              topicPreferences: [],
+              postFrequency: '',
+              signature: '',
+          };
+          return newUserProfile;
         });
-
       } else {
         setUser(null);
       }
@@ -159,33 +159,38 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             ...teamData,
             id: new Date().toISOString() + Math.random(),
         };
-        return {
+        const updatedUser = {
             ...prev,
             ...userData,
             teams: [newTeam],
             activeTeamId: newTeam.id,
             isOnboardingCompleted: true,
         };
+        return updatedUser;
     });
+    redirect('/calendar');
   };
   
-  const signInWithGoogle = async () => {
+ const signInWithGoogle = () => {
     const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-      toast({
-        title: 'Login Successful!',
-        description: "You've been successfully signed in.",
+    signInWithPopup(auth, provider)
+      .then(() => {
+        toast({
+          title: 'Login Successful!',
+          description: "Welcome back! You've been successfully signed in.",
+        });
+        // The onAuthStateChanged listener will handle the user state update.
+      })
+      .catch((error) => {
+        console.error("Error signing in with Google", error);
+        toast({
+          title: 'Login Failed',
+          description: 'There was a problem signing you in. Please try again.',
+          variant: 'destructive',
+        });
       });
-    } catch (error) {
-      console.error("Error signing in with Google", error);
-       toast({
-        title: 'Login Failed',
-        description: 'There was a problem signing you in. Please try again.',
-        variant: 'destructive',
-      });
-    }
   };
+
 
   const signOut = () => {
     firebaseSignOut(auth).catch((error) => {
