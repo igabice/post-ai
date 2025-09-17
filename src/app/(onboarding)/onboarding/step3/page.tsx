@@ -13,8 +13,9 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 const step3Schema = z.object({
   topicPreferences: z.array(z.string()).refine((value) => value.some((item) => item), {
@@ -69,35 +70,36 @@ export default function OnboardingStep3() {
               <FormField
                 control={form.control}
                 name="topicPreferences"
-                render={() => (
+                render={({ field }) => (
                   <FormItem>
                     <div className="mb-4">
                       <FormLabel className="text-base">Core Topic Preferences</FormLabel>
                       <FormDescription>Select up to 3 topics that best represent your brand.</FormDescription>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {availableTopics.map((item) => (
-                        <FormField
-                          key={item}
-                          control={form.control}
-                          name="topicPreferences"
-                          render={({ field }) => (
-                            <FormItem key={item} className="flex flex-row items-start space-x-3 space-y-0">
-                              <FormControl>
-                                <Checkbox
-                                  checked={field.value?.includes(item)}
-                                  onCheckedChange={(checked) => {
-                                    return checked
-                                      ? field.onChange([...field.value, item])
-                                      : field.onChange(field.value?.filter((value) => value !== item));
-                                  }}
-                                />
-                              </FormControl>
-                              <FormLabel className="font-normal">{item}</FormLabel>
-                            </FormItem>
-                          )}
-                        />
-                      ))}
+                    <div className="flex flex-wrap gap-2">
+                       {availableTopics.map((item) => {
+                          const isSelected = field.value?.includes(item);
+                          return (
+                            <button
+                                type="button"
+                                key={item}
+                                onClick={() => {
+                                    const newValue = isSelected
+                                    ? field.value?.filter((value) => value !== item)
+                                    : [...(field.value || []), item];
+                                    field.onChange(newValue);
+                                }}
+                                className={cn(
+                                    "rounded-full border px-3 py-1 text-sm transition-colors",
+                                    isSelected
+                                    ? "bg-primary text-primary-foreground border-transparent"
+                                    : "bg-background hover:bg-accent"
+                                )}
+                            >
+                              {item}
+                            </button>
+                          );
+                       })}
                     </div>
                     <FormMessage />
                   </FormItem>

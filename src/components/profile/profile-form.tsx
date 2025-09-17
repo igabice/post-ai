@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -22,10 +23,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '../ui/textarea';
+import { cn } from '@/lib/utils';
 
 const profileSchema = z.object({
   name: z.string().min(2, {
@@ -108,46 +109,38 @@ export function ProfileForm() {
                 <FormField
                 control={form.control}
                 name="topicPreferences"
-                render={() => (
+                render={({ field }) => (
                     <FormItem>
-                    <div className="mb-4">
-                        <FormLabel className="text-base">Core Topic Preferences</FormLabel>
-                        <FormDescription>Select up to 3 topics that best represent your brand.</FormDescription>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {availableTopics.map((item) => (
-                        <FormField
-                            key={item}
-                            control={form.control}
-                            name="topicPreferences"
-                            render={({ field }) => {
-                            return (
-                                <FormItem
-                                key={item}
-                                className="flex flex-row items-start space-x-3 space-y-0"
-                                >
-                                <FormControl>
-                                    <Checkbox
-                                    checked={field.value?.includes(item)}
-                                    onCheckedChange={(checked) => {
-                                        return checked
-                                        ? field.onChange([...field.value, item])
-                                        : field.onChange(
-                                            field.value?.filter(
-                                                (value) => value !== item
-                                            )
-                                            );
+                        <div className="mb-4">
+                            <FormLabel className="text-base">Core Topic Preferences</FormLabel>
+                            <FormDescription>Select up to 3 topics that best represent your brand.</FormDescription>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                           {availableTopics.map((item) => {
+                              const isSelected = field.value?.includes(item);
+                              return (
+                                <button
+                                    type="button"
+                                    key={item}
+                                    onClick={() => {
+                                        const newValue = isSelected
+                                        ? field.value?.filter((value) => value !== item)
+                                        : [...(field.value || []), item];
+                                        field.onChange(newValue);
                                     }}
-                                    />
-                                </FormControl>
-                                <FormLabel className="font-normal">{item}</FormLabel>
-                                </FormItem>
-                            );
-                            }}
-                        />
-                        ))}
-                    </div>
-                    <FormMessage />
+                                    className={cn(
+                                        "rounded-full border px-3 py-1 text-sm transition-colors",
+                                        isSelected
+                                        ? "bg-primary text-primary-foreground border-transparent"
+                                        : "bg-background hover:bg-accent"
+                                    )}
+                                >
+                                  {item}
+                                </button>
+                              );
+                           })}
+                        </div>
+                        <FormMessage />
                     </FormItem>
                 )}
                 />
