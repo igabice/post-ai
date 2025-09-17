@@ -11,15 +11,23 @@ export default function LoginPage() {
   const { signInWithGoogle, signInWithFacebook } = useApp();
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
+      <div className="mb-8 text-center">
+        <h1 className="text-4xl font-bold tracking-tighter">
+          Stop managing posts, start building a brand.
+        </h1>
+        <p className="text-muted-foreground mt-2 max-w-xl">
+          Automate your social media with a content calendar, AI-powered planning, and post generation.
+        </p>
+      </div>
+      <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-          <div className="mb-4 flex justify-center">
-            <Icons.Logo className="h-10 w-10" />
+          <div className="mb-2 flex justify-center">
+            <Icons.Logo className="h-8 w-8" />
           </div>
-          <CardTitle className="text-2xl">Welcome to Content Compass</CardTitle>
+          <CardTitle className="text-2xl">Sign In</CardTitle>
           <CardDescription>
-            Automate your social media with a content calendar, AI-powered planning, and post generation.
+            Choose your preferred provider to continue.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
