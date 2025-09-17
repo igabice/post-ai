@@ -11,14 +11,16 @@ export default function LoginPage() {
   const { signInWithGoogle, signInWithFacebook } = useApp();
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <Card className="w-full max-w-sm">
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="mb-4 flex justify-center">
             <Icons.Logo className="h-10 w-10" />
           </div>
           <CardTitle className="text-2xl">Welcome to Content Compass</CardTitle>
-          <CardDescription>Sign in to continue to your dashboard.</CardDescription>
+          <CardDescription>
+            Automate your social media with a content calendar, AI-powered planning, and post generation.
+          </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
           <Button variant="outline" onClick={signInWithGoogle}>
