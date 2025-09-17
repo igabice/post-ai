@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -67,6 +68,17 @@ export function TeamSwitcher() {
     setDialogOpen(false);
     form.reset();
   };
+  
+  const handleTeamSelect = (teamId: string) => {
+    switchTeam(teamId);
+    setPopoverOpen(false);
+  };
+
+  const handleCreateTeamSelect = () => {
+    setPopoverOpen(false);
+    setDialogOpen(true);
+  };
+
 
   return (
     <>
@@ -92,10 +104,7 @@ export function TeamSwitcher() {
                 {user.teams.map((team) => (
                   <CommandItem
                     key={team.id}
-                    onSelect={() => {
-                      switchTeam(team.id);
-                      setPopoverOpen(false);
-                    }}
+                    onSelect={() => handleTeamSelect(team.id)}
                     className="text-sm"
                   >
                     <Check
@@ -115,10 +124,7 @@ export function TeamSwitcher() {
             <CommandList>
               <CommandGroup>
                 <CommandItem
-                  onSelect={() => {
-                    setPopoverOpen(false);
-                    setDialogOpen(true);
-                  }}
+                  onSelect={handleCreateTeamSelect}
                 >
                   <PlusCircle className="mr-2 h-5 w-5" />
                   Create Team
