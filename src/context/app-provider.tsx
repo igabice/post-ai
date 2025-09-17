@@ -12,7 +12,7 @@ import {
   signOut as firebaseSignOut,
   User as FirebaseUser 
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc, collection, addDoc, getDocs, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, collection, addDoc, getDocs } from "firebase/firestore";
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 
@@ -63,9 +63,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           const teamSnap = await getDocs(teamsCollectionRef);
           const teams = teamSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Team));
           
-          setUser({ ...userData, teams });
+          setUser({ ...userData, uid: firebaseUser.uid, teams });
         } else {
-          // New user, create a temporary profile in state
+          // New user, create a temporary profile in state to guide to onboarding
           const newUserProfile: UserProfile = {
             uid: firebaseUser.uid,
             name: firebaseUser.displayName || 'New User',
@@ -88,18 +88,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, []);
   
   const isOnboardingCompleted = useMemo(() => user?.isOnboardingCompleted || false, [user]);
-
-  useEffect(() => {
-    if (user === undefined) return;
-    
-    if (user) {
-      if (!isOnboardingCompleted) {
-        router.push('/onboarding/step1');
-      }
-    } else {
-      router.push('/login');
-    }
-  }, [user, isOnboardingCompleted, router]);
 
   const updateProfile = async (profile: Partial<Omit<UserProfile, 'teams' | 'activeTeamId' | 'uid'>>) => {
     if (!user) return;
@@ -132,7 +120,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     const userRef = doc(db, "users", user.uid);
     
-    // Create the first team
+    // Create the first team in a subcollection
     const teamRef = await addDoc(collection(userRef, "teams"), teamData);
     const newTeam: Team = { ...teamData, id: teamRef.id };
 
@@ -144,13 +132,34 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       isOnboardingCompleted: true,
     };
     
-    // Create the user document
-    // We remove 'teams' from the user profile before saving, as it's a subcollection
+    // Save the main user profile document (without teams array)
     const { teams, ...userProfileToSave } = finalUserProfile;
     await setDoc(userRef, userProfileToSave);
 
     setUser(finalUserProfile);
     router.push('/calendar');
+  };
+
+  const signInWithGoogle = () => {
+    const provider = new GoogleAuthProvider();
+    signInWithPopup(auth, provider)
+      .catch((error) => {
+        console.error("Error signing in with Google", error);
+        toast({
+          title: 'Login Failed',
+          description: 'There was a problem signing you in. Please try again.',
+          variant: 'destructive',
+        });
+      });
+  };
+
+  const signOut = () => {
+    firebaseSignOut(auth).then(() => {
+        setUser(null);
+        router.push('/login');
+    }).catch((error) => {
+      console.error("Error signing out", error);
+    });
   };
 
   const updatePost = (postId: string, postData: Partial<Post>) => {
@@ -203,44 +212,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return allPosts.find(p => p.id === postId);
   };
 
-  const signInWithGoogle = () => {
-    const provider = new GoogleAuthProvider();
-    signInWithPopup(auth, provider)
-      .then(() => {
-        toast({
-            title: 'Successfully Signed In!',
-            description: 'Welcome back!',
-        });
-      })
-      .catch((error) => {
-        console.error("Error signing in with Google", error);
-        toast({
-          title: 'Login Failed',
-          description: 'There was a problem signing you in. Please try again.',
-          variant: 'destructive',
-        });
-      });
-  };
-
-  const signOut = () => {
-    firebaseSignOut(auth).then(() => {
-        setUser(null);
-        setAllPosts([]);
-        setAllContentPlans([]);
-        router.push('/login');
-    }).catch((error) => {
-      console.error("Error signing out", error);
-    });
-  };
-
   const activeTeam = useMemo(() => user?.teams.find(t => t.id === user.activeTeamId), [user?.teams, user?.activeTeamId]);
   const posts = useMemo(() => user ? allPosts.filter(p => p.teamId === user.activeTeamId) : [], [allPosts, user]);
   const contentPlans = useMemo(() => user ? allContentPlans.filter(p => p.teamId === user.activeTeamId) : [], [allContentPlans, user]);
 
   const value = { user, posts, contentPlans, updateProfile, updatePost, addPost, addContentPlan, availableTopics, availableFrequencies, getPostById, deletePost, copyPost, generatedPosts, setGeneratedPosts, activeTeam, switchTeam, addTeam, isOnboardingCompleted, completeOnboarding, signInWithGoogle, signOut };
   
+  // Render a loading state or nothing while the user state is being determined.
   if (user === undefined) {
-    return null;
+    return null; 
   }
 
   return (

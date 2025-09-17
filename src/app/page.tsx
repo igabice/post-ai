@@ -9,18 +9,22 @@ export default function RootPage() {
     const router = useRouter();
 
     useEffect(() => {
+        // If user status is still being determined, do nothing.
+        if (user === undefined) {
+            return;
+        }
+
         if (user === null) {
             router.replace('/login');
-        } else if (user) {
+        } else {
             if (isOnboardingCompleted) {
                 router.replace('/calendar');
             } else {
                 router.replace('/onboarding/step1');
             }
         }
-        // If user is undefined, it means we're still waiting for the auth state, so we do nothing.
     }, [user, isOnboardingCompleted, router]);
 
-    // Render nothing, or a loading spinner, while the initial auth check and redirect is happening.
+    // Render a loading indicator or nothing while the initial auth check and redirect is happening.
     return null; 
 }
