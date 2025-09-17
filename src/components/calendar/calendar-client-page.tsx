@@ -198,7 +198,7 @@ export function CalendarClientPage() {
                           )}
                           onClick={() => handleDateSelect(date)}
                         >
-                          <span className={cn(props.className, 'h-auto p-0 text-xs sm:text-sm')} >
+                          <span className={cn(props.className, 'h-auto p-0 text-xs sm:text-sm font-bold text-black dark:text-white')} >
                             {format(date, 'd')}
                           </span>
                            {postsForDay.length > 0 && (
