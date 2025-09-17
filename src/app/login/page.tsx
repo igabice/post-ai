@@ -31,7 +31,7 @@ function DoodleBackground() {
 
 
 export default function LoginPage() {
-  const { signInWithGoogle, signInWithFacebook } = useApp();
+  const { signInWithGoogle } = useApp();
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center bg-background p-4 overflow-hidden">
@@ -52,17 +52,13 @@ export default function LoginPage() {
             </div>
             <CardTitle className="text-2xl">Sign In</CardTitle>
             <CardDescription>
-                Choose your preferred provider to continue.
+                Sign in with Google to continue.
             </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
-            <Button variant="outline" onClick={signInWithGoogle}>
+            <Button onClick={signInWithGoogle}>
                 <Chrome className="mr-2 h-4 w-4" />
                 Sign in with Google
-            </Button>
-            <Button variant="outline" onClick={signInWithFacebook}>
-                <Facebook className="mr-2 h-4 w-4" />
-                Sign in with Facebook
             </Button>
             </CardContent>
         </Card>
@@ -70,4 +66,3 @@ export default function LoginPage() {
     </div>
   );
 }
-

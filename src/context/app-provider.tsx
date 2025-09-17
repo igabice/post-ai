@@ -8,7 +8,6 @@ import { auth } from '@/lib/firebase';
 import { 
   onAuthStateChanged, 
   GoogleAuthProvider, 
-  FacebookAuthProvider,
   signInWithPopup,
   signOut as firebaseSignOut,
   User as FirebaseUser 
@@ -35,7 +34,6 @@ interface AppContextType {
   addTeam: (team: Omit<Team, 'id'>) => void;
   completeOnboarding: (userData: Omit<UserProfile, 'avatarUrl' | 'teams' | 'activeTeamId' | 'isOnboardingCompleted'>, teamData: Omit<Team, 'id'>) => void;
   signInWithGoogle: () => void;
-  signInWithFacebook: () => void;
   signOut: () => void;
 }
 
@@ -169,15 +167,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const signInWithFacebook = async () => {
-    const provider = new FacebookAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-    } catch (error) {
-      console.error("Error signing in with Facebook", error);
-    }
-  };
-
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
@@ -193,7 +182,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const contentPlans = useMemo(() => user ? allContentPlans.filter(p => p.teamId === user.activeTeamId) : [], [allContentPlans, user]);
 
   return (
-    <AppContext.Provider value={{ user, posts, contentPlans, updateProfile, updatePost, addPost, addContentPlan, availableTopics, availableFrequencies, getPostById, deletePost, copyPost, generatedPosts, setGeneratedPosts, activeTeam, switchTeam, addTeam, isOnboardingCompleted, completeOnboarding, signInWithGoogle, signInWithFacebook, signOut }}>
+    <AppContext.Provider value={{ user, posts, contentPlans, updateProfile, updatePost, addPost, addContentPlan, availableTopics, availableFrequencies, getPostById, deletePost, copyPost, generatedPosts, setGeneratedPosts, activeTeam, switchTeam, addTeam, isOnboardingCompleted, completeOnboarding, signInWithGoogle, signOut }}>
       {children}
     </AppContext.Provider>
   );
