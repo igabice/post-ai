@@ -40,29 +40,21 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<UserProfile | null>(null);
+  const [user, setUser] = useState<UserProfile | null | undefined>(undefined);
   const [allPosts, setAllPosts] = useState<Post[]>(initialPosts);
   const [allContentPlans, setAllContentPlans] = useState<ContentPlan[]>([]);
   const [generatedPosts, setGeneratedPosts] = useState<Post[]>([]);
-  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
-       setUser(prevUser => {
-        if (firebaseUser) {
-          // A user is signed in.
-          const existingUser = prevUser && prevUser.avatarUrl.includes(firebaseUser.uid);
-          
-          if (existingUser) {
-            // User is already in state, maybe just update some fields if needed
-            return {
-              ...prevUser,
-              name: firebaseUser.displayName || prevUser.name,
-              avatarUrl: firebaseUser.photoURL || prevUser.avatarUrl,
-            };
-          } else {
-            // New user signs in, or user data is not in state yet.
-            // This is where we create the initial user object before onboarding.
+      if (firebaseUser) {
+        setUser(prevUser => {
+            // If there's an existing user in state with matching UID, it might be a refresh. Keep it.
+            if (prevUser && 'avatarUrl' in prevUser && prevUser.avatarUrl.includes(firebaseUser.uid)) {
+                return prevUser;
+            }
+            // Otherwise, this is a new login or the first time we see this user.
+            // Create a fresh user object, ready for onboarding.
             return {
               name: firebaseUser.displayName || 'New User',
               avatarUrl: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/100/100`,
@@ -72,13 +64,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
               topicPreferences: [],
               postFrequency: '',
             };
-          }
-        } else {
-          // User is signed out.
-          return null;
-        }
-      });
-      setAuthChecked(true);
+        });
+      } else {
+        setUser(null);
+      }
     });
 
     return () => unsubscribe();
@@ -184,6 +173,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
+      setUser(null);
     } catch (error) {
       console.error("Error signing out", error);
     }
@@ -219,9 +209,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     signOut 
   };
 
+  // Render children only when auth state is determined
+  if (user === undefined) {
+    return null; // or a loading screen
+  }
+
   return (
     <AppContext.Provider value={value}>
-      {authChecked ? children : null}
+      {children}
     </AppContext.Provider>
   );
 };

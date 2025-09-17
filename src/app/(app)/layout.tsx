@@ -47,15 +47,18 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   React.useEffect(() => {
-    if (!user) {
+    // We already check for user === undefined in the provider.
+    // If user is null, it means they are not logged in.
+    if (user === null) {
       router.replace('/login');
     } else if (!isOnboardingCompleted) {
       router.replace('/onboarding/step1');
     }
   }, [user, isOnboardingCompleted, router]);
 
-  if (!user || !isOnboardingCompleted) {
-    return null; // Or a loading spinner
+  // Render nothing while redirecting or if user is not ready.
+  if (user === null || !isOnboardingCompleted) {
+    return null;
   }
   
   const handleLinkClick = () => {
