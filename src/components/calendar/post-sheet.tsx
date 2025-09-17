@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useTransition } from 'react';
@@ -147,7 +148,7 @@ export function PostSheet({ isOpen, setIsOpen, post, selectedDate }: PostSheetPr
           </SheetDescription>
         </SheetHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col gap-4 overflow-y-auto p-1">
-          <div className="border rounded-md">
+          <div className="border border-black rounded-md">
             <Collapsible open={isCollapsibleOpen} onOpenChange={setIsCollapsibleOpen}>
               <CollapsibleTrigger asChild>
                   <Button variant="ghost" type="button" className="w-full justify-between p-4">
@@ -316,3 +317,5 @@ export function PostSheet({ isOpen, setIsOpen, post, selectedDate }: PostSheetPr
     </Sheet>
   );
 }
+
+    
