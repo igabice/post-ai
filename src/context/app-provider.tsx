@@ -44,34 +44,41 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [allPosts, setAllPosts] = useState<Post[]>(initialPosts);
   const [allContentPlans, setAllContentPlans] = useState<ContentPlan[]>([]);
   const [generatedPosts, setGeneratedPosts] = useState<Post[]>([]);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
-      if (firebaseUser) {
-        setUser(prevUser => {
-          // If there's an existing user, merge to preserve onboarding state etc.
-          // In a real app this would be a database fetch.
-          if (prevUser && prevUser.name !== 'New User') {
+       setUser(prevUser => {
+        if (firebaseUser) {
+          // A user is signed in.
+          const existingUser = prevUser && prevUser.avatarUrl.includes(firebaseUser.uid);
+          
+          if (existingUser) {
+            // User is already in state, maybe just update some fields if needed
             return {
               ...prevUser,
               name: firebaseUser.displayName || prevUser.name,
               avatarUrl: firebaseUser.photoURL || prevUser.avatarUrl,
-            }
+            };
+          } else {
+            // New user signs in, or user data is not in state yet.
+            // This is where we create the initial user object before onboarding.
+            return {
+              name: firebaseUser.displayName || 'New User',
+              avatarUrl: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/100/100`,
+              isOnboardingCompleted: false,
+              teams: [],
+              activeTeamId: '',
+              topicPreferences: [],
+              postFrequency: '',
+            };
           }
-          // If no user exists, create a new one.
-          return {
-            name: firebaseUser.displayName || 'New User',
-            avatarUrl: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/100/100`,
-            isOnboardingCompleted: false,
-            teams: [],
-            activeTeamId: '',
-            topicPreferences: [],
-            postFrequency: '',
-          };
-        });
-      } else {
-        setUser(null);
-      }
+        } else {
+          // User is signed out.
+          return null;
+        }
+      });
+      setAuthChecked(true);
     });
 
     return () => unsubscribe();
@@ -188,9 +195,33 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const posts = useMemo(() => user ? allPosts.filter(p => p.teamId === user.activeTeamId) : [], [allPosts, user]);
   const contentPlans = useMemo(() => user ? allContentPlans.filter(p => p.teamId === user.activeTeamId) : [], [allContentPlans, user]);
 
+  const value = { 
+    user, 
+    posts, 
+    contentPlans, 
+    updateProfile, 
+    updatePost, 
+    addPost, 
+    addContentPlan, 
+    availableTopics, 
+    availableFrequencies, 
+    getPostById, 
+    deletePost, 
+    copyPost, 
+    generatedPosts, 
+    setGeneratedPosts, 
+    activeTeam, 
+    switchTeam, 
+    addTeam, 
+    isOnboardingCompleted, 
+    completeOnboarding, 
+    signInWithGoogle, 
+    signOut 
+  };
+
   return (
-    <AppContext.Provider value={{ user, posts, contentPlans, updateProfile, updatePost, addPost, addContentPlan, availableTopics, availableFrequencies, getPostById, deletePost, copyPost, generatedPosts, setGeneratedPosts, activeTeam, switchTeam, addTeam, isOnboardingCompleted, completeOnboarding, signInWithGoogle, signOut }}>
-      {children}
+    <AppContext.Provider value={value}>
+      {authChecked ? children : null}
     </AppContext.Provider>
   );
 };
