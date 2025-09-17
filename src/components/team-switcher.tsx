@@ -1,9 +1,10 @@
-
 'use client';
 
 import * as React from 'react';
 import { ChevronsUpDown, PlusCircle, Check } from 'lucide-react';
 import * as z from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 import { useApp } from '@/context/app-provider';
 import { cn } from '@/lib/utils';
@@ -28,11 +29,8 @@ import {
   DialogDescription, 
   DialogFooter, 
   DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
-} from './ui/dialog';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+  DialogTitle
+} from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
@@ -45,8 +43,8 @@ const newTeamSchema = z.object({
 
 export function TeamSwitcher() {
   const { user, activeTeam, switchTeam, addTeam } = useApp();
-  const [open, setOpen] = React.useState(false);
-  const [showNewTeamDialog, setShowNewTeamDialog] = React.useState(false);
+  const [popoverOpen, setPopoverOpen] = React.useState(false);
+  const [dialogOpen, setDialogOpen] = React.useState(false);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof newTeamSchema>>({
@@ -66,19 +64,18 @@ export function TeamSwitcher() {
       title: 'Team Created!',
       description: `The "${data.name}" team has been created and selected.`,
     });
-    setShowNewTeamDialog(false);
+    setDialogOpen(false);
     form.reset();
   };
 
-
   return (
-    <Dialog open={showNewTeamDialog} onOpenChange={setShowNewTeamDialog}>
-      <Popover open={open} onOpenChange={setOpen}>
+    <>
+      <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
             role="combobox"
-            aria-expanded={open}
+            aria-expanded={popoverOpen}
             aria-label="Select a team"
             className="w-[200px] justify-between"
           >
@@ -97,7 +94,7 @@ export function TeamSwitcher() {
                     key={team.id}
                     onSelect={() => {
                       switchTeam(team.id);
-                      setOpen(false);
+                      setPopoverOpen(false);
                     }}
                     className="text-sm"
                   >
@@ -117,68 +114,68 @@ export function TeamSwitcher() {
             <CommandSeparator />
             <CommandList>
               <CommandGroup>
-                <DialogTrigger asChild>
-                  <CommandItem
-                    onSelect={() => {
-                      setOpen(false);
-                      setShowNewTeamDialog(true);
-                    }}
-                  >
-                    <PlusCircle className="mr-2 h-5 w-5" />
-                    Create Team
-                  </CommandItem>
-                </DialogTrigger>
+                <CommandItem
+                  onSelect={() => {
+                    setPopoverOpen(false);
+                    setDialogOpen(true);
+                  }}
+                >
+                  <PlusCircle className="mr-2 h-5 w-5" />
+                  Create Team
+                </CommandItem>
               </CommandGroup>
             </CommandList>
           </Command>
         </PopoverContent>
       </Popover>
-      <DialogContent>
-        <Form {...form}>
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
-                <DialogHeader>
+              <DialogHeader>
                 <DialogTitle>Create team</DialogTitle>
                 <DialogDescription>
-                    Add a new team to manage content for a different project or brand.
+                  Add a new team to manage content for a different project or brand.
                 </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-6">
-                    <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Team name</FormLabel>
-                        <FormControl>
-                            <Input placeholder="Acme Inc." {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                     <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Description</FormLabel>
-                        <FormControl>
-                            <Textarea placeholder="A team for our main company brand." {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                </div>
-                <DialogFooter>
-                <Button variant="ghost" onClick={() => setShowNewTeamDialog(false)}>
-                    Cancel
+              </DialogHeader>
+              <div className="space-y-4 py-6">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Team name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Acme Inc." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="A team for our main company brand." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <DialogFooter>
+                <Button variant="ghost" type="button" onClick={() => setDialogOpen(false)}>
+                  Cancel
                 </Button>
                 <Button type="submit">Create Team</Button>
-                </DialogFooter>
+              </DialogFooter>
             </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
