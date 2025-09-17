@@ -12,6 +12,7 @@ import {
   signOut as firebaseSignOut,
   User as FirebaseUser 
 } from 'firebase/auth';
+import { useToast } from '@/hooks/use-toast';
 
 interface AppContextType {
   user: UserProfile | null | undefined; // Allow undefined for initial loading state
@@ -44,35 +45,32 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [allPosts, setAllPosts] = useState<Post[]>(initialPosts);
   const [allContentPlans, setAllContentPlans] = useState<ContentPlan[]>([]);
   const [generatedPosts, setGeneratedPosts] = useState<Post[]>([]);
+  const { toast } = useToast();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
-        // When Firebase confirms a user is logged in, we update our app's state.
-        // We retrieve the existing user profile from our state if it exists,
-        // or create a new one if it's a fresh login.
+        const newUserProfile: UserProfile = {
+            name: firebaseUser.displayName || 'New User',
+            avatarUrl: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/100/100`,
+            isOnboardingCompleted: false, // Will be updated if user data exists
+            teams: [],
+            activeTeamId: '',
+            topicPreferences: [],
+            postFrequency: '',
+            signature: '',
+        };
+        
         setUser(prevUser => {
-            const isNewUser = !prevUser || prevUser.name !== firebaseUser.displayName;
-
-            if (isNewUser) {
-                return {
-                    name: firebaseUser.displayName || 'New User',
-                    avatarUrl: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/100/100`,
-                    isOnboardingCompleted: false, // Default for new user
-                    teams: [],
-                    activeTeamId: '',
-                    topicPreferences: [],
-                    postFrequency: '',
-                    signature: '',
-                };
-            }
-            // If user already exists in state, keep it to avoid unnecessary re-renders.
-            // But we must merge any potential changes from their profile if needed in future.
-            // For now, returning the prevUser is safe if they are not new.
-            return prevUser;
+          // A simple way to check if we are dealing with a new login vs. a page refresh
+          // For a new login, prevUser might be null.
+          if (!prevUser || prevUser.name !== newUserProfile.name) {
+             return { ...newUserProfile, ...prevUser }; // Merge to preserve any existing state if needed, but prioritize new info
+          }
+          return prevUser; // No change if user is same
         });
+
       } else {
-        // User is signed out, clear the user state.
         setUser(null);
       }
     });
@@ -155,25 +153,38 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const completeOnboarding = (userData: Omit<UserProfile, 'avatarUrl' | 'teams' | 'activeTeamId' | 'isOnboardingCompleted'>, teamData: Omit<Team, 'id'>) => {
-    if (!user) return;
-    const newTeam: Team = {
-      ...teamData,
-      id: new Date().toISOString() + Math.random(),
-    };
-    setUser(prev => ({
-      ...prev!,
-      ...userData,
-      teams: [newTeam],
-      activeTeamId: newTeam.id,
-      isOnboardingCompleted: true,
-    }));
+    setUser(prev => {
+        if (!prev) return null;
+        const newTeam: Team = {
+            ...teamData,
+            id: new Date().toISOString() + Math.random(),
+        };
+        return {
+            ...prev,
+            ...userData,
+            teams: [newTeam],
+            activeTeamId: newTeam.id,
+            isOnboardingCompleted: true,
+        };
+    });
   };
   
-  const signInWithGoogle = () => {
+  const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
-    signInWithPopup(auth, provider).catch((error) => {
+    try {
+      await signInWithPopup(auth, provider);
+      toast({
+        title: 'Login Successful!',
+        description: "You've been successfully signed in.",
+      });
+    } catch (error) {
       console.error("Error signing in with Google", error);
-    });
+       toast({
+        title: 'Login Failed',
+        description: 'There was a problem signing you in. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const signOut = () => {
@@ -212,7 +223,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     signOut 
   };
   
-  // Render nothing until the initial auth state has been determined.
   if (user === undefined) {
     return null; 
   }
