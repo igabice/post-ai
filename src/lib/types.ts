@@ -23,6 +23,7 @@ export type Team = {
 }
 
 export type UserProfile = {
+  uid: string;
   name: string;
   avatarUrl: string;
   topicPreferences: string[];

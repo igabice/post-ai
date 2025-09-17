@@ -4,7 +4,7 @@
 import React, { createContext, useContext, useState, ReactNode, useMemo, useEffect } from 'react';
 import { Post, UserProfile, ContentPlan, Team, availableTopics, availableFrequencies } from '@/lib/types';
 import { posts as initialPosts } from '@/lib/data';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { 
   onAuthStateChanged, 
   GoogleAuthProvider, 
@@ -12,6 +12,7 @@ import {
   signOut as firebaseSignOut,
   User as FirebaseUser 
 } from 'firebase/auth';
+import { doc, getDoc, setDoc, updateDoc, collection, addDoc, getDocs, serverTimestamp } from "firebase/firestore";
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 
@@ -23,7 +24,7 @@ interface AppContextType {
   activeTeam: Team | undefined;
   isOnboardingCompleted: boolean;
   setGeneratedPosts: (posts: Post[]) => void;
-  updateProfile: (profile: Partial<Omit<UserProfile, 'teams' | 'activeTeamId'>>) => void;
+  updateProfile: (profile: Partial<Omit<UserProfile, 'teams' | 'activeTeamId' | 'uid'>>) => Promise<void>;
   updatePost: (postId: string, postData: Partial<Post>) => void;
   addPost: (postData: Omit<Post, 'id' | 'analytics' | 'teamId'>) => Post;
   addContentPlan: (plan: Omit<ContentPlan, 'id' | 'createdAt' | 'teamId'>) => void;
@@ -32,9 +33,9 @@ interface AppContextType {
   availableTopics: string[];
   availableFrequencies: string[];
   getPostById: (postId: string) => Post | undefined;
-  switchTeam: (teamId: string) => void;
-  addTeam: (team: Omit<Team, 'id'>) => void;
-  completeOnboarding: (userData: Omit<UserProfile, 'avatarUrl' | 'teams' | 'activeTeamId' | 'isOnboardingCompleted'>, teamData: Omit<Team, 'id'>) => void;
+  switchTeam: (teamId: string) => Promise<void>;
+  addTeam: (team: Omit<Team, 'id'>) => Promise<void>;
+  completeOnboarding: (userData: Omit<UserProfile, 'avatarUrl' | 'teams' | 'activeTeamId' | 'isOnboardingCompleted' | 'uid'>, teamData: Omit<Team, 'id'>) => Promise<void>;
   signInWithGoogle: () => void;
   signOut: () => void;
 }
@@ -50,21 +51,34 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
-        // This is a simplified user creation for demonstration.
-        // In a real app, you'd fetch this from a database.
-        const newUserProfile: UserProfile = {
-          name: firebaseUser.displayName || 'New User',
-          avatarUrl: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/100/100`,
-          isOnboardingCompleted: false, // Assume false for now
-          teams: [],
-          activeTeamId: '',
-          topicPreferences: [],
-          postFrequency: '',
-          signature: '',
-        };
-        setUser(newUserProfile);
+        const userRef = doc(db, "users", firebaseUser.uid);
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+          const userData = userSnap.data() as UserProfile;
+          // Fetch teams subcollection
+          const teamsCollectionRef = collection(userRef, "teams");
+          const teamSnap = await getDocs(teamsCollectionRef);
+          const teams = teamSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Team));
+          
+          setUser({ ...userData, teams });
+        } else {
+          // New user, create a temporary profile in state
+          const newUserProfile: UserProfile = {
+            uid: firebaseUser.uid,
+            name: firebaseUser.displayName || 'New User',
+            avatarUrl: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/100/100`,
+            isOnboardingCompleted: false,
+            teams: [],
+            activeTeamId: '',
+            topicPreferences: [],
+            postFrequency: '',
+            signature: '',
+          };
+          setUser(newUserProfile);
+        }
       } else {
         setUser(null);
       }
@@ -72,13 +86,71 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     return () => unsubscribe();
   }, []);
-
+  
   const isOnboardingCompleted = useMemo(() => user?.isOnboardingCompleted || false, [user]);
 
-  const updateProfile = (profile: Partial<UserProfile>) => {
+  useEffect(() => {
+    if (user === undefined) return;
+    
+    if (user) {
+      if (!isOnboardingCompleted) {
+        router.push('/onboarding/step1');
+      }
+    } else {
+      router.push('/login');
+    }
+  }, [user, isOnboardingCompleted, router]);
+
+  const updateProfile = async (profile: Partial<Omit<UserProfile, 'teams' | 'activeTeamId' | 'uid'>>) => {
     if (!user) return;
-    setUser((prev) => (prev ? { ...prev, ...profile } : null));
-    // In a real app, you would also save this to your database
+    const updatedUser = { ...user, ...profile };
+    setUser(updatedUser);
+    const userRef = doc(db, "users", user.uid);
+    await updateDoc(userRef, profile);
+  };
+
+  const switchTeam = async (teamId: string) => {
+    if (!user) return;
+    setUser(prev => (prev ? {...prev, activeTeamId: teamId} : null));
+    const userRef = doc(db, "users", user.uid);
+    await updateDoc(userRef, { activeTeamId: teamId });
+  };
+
+  const addTeam = async (teamData: Omit<Team, 'id'>) => {
+    if (!user) return;
+    const userTeamsRef = collection(db, "users", user.uid, "teams");
+    const newTeamRef = await addDoc(userTeamsRef, teamData);
+    const newTeam = { ...teamData, id: newTeamRef.id };
+    
+    const updatedTeams = [...user.teams, newTeam];
+    setUser(prev => prev ? { ...prev, teams: updatedTeams, activeTeamId: newTeam.id } : null);
+    await updateDoc(doc(db, "users", user.uid), { activeTeamId: newTeam.id });
+  };
+
+  const completeOnboarding = async (userData: Omit<UserProfile, 'avatarUrl' | 'teams' | 'activeTeamId' | 'isOnboardingCompleted' | 'uid'>, teamData: Omit<Team, 'id'>) => {
+    if (!user) return;
+
+    const userRef = doc(db, "users", user.uid);
+    
+    // Create the first team
+    const teamRef = await addDoc(collection(userRef, "teams"), teamData);
+    const newTeam: Team = { ...teamData, id: teamRef.id };
+
+    const finalUserProfile: UserProfile = {
+      ...user,
+      ...userData,
+      teams: [newTeam],
+      activeTeamId: newTeam.id,
+      isOnboardingCompleted: true,
+    };
+    
+    // Create the user document
+    // We remove 'teams' from the user profile before saving, as it's a subcollection
+    const { teams, ...userProfileToSave } = finalUserProfile;
+    await setDoc(userRef, userProfileToSave);
+
+    setUser(finalUserProfile);
+    router.push('/calendar');
   };
 
   const updatePost = (postId: string, postData: Partial<Post>) => {
@@ -131,40 +203,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return allPosts.find(p => p.id === postId);
   };
 
-  const switchTeam = (teamId: string) => {
-    if (!user) return;
-    setUser(prev => (prev ? {...prev, activeTeamId: teamId} : null));
-  };
-
-  const addTeam = (teamData: Omit<Team, 'id'>) => {
-    if (!user) return;
-    const newTeam = { ...teamData, id: new Date().toISOString() };
-    setUser(prev => prev ? {
-        ...prev,
-        teams: [...prev.teams, newTeam],
-        activeTeamId: newTeam.id,
-    } : null);
-  };
-
-  const completeOnboarding = (userData: Omit<UserProfile, 'avatarUrl' | 'teams' | 'activeTeamId' | 'isOnboardingCompleted'>, teamData: Omit<Team, 'id'>) => {
-    if (!user) return;
-    const newTeam: Team = {
-      ...teamData,
-      id: new Date().toISOString(),
-    };
-    setUser(prev => prev ? {
-      ...prev,
-      ...userData,
-      teams: [newTeam],
-      activeTeamId: newTeam.id,
-      isOnboardingCompleted: true,
-    } : null);
-    router.push('/calendar');
-  };
-  
   const signInWithGoogle = () => {
     const provider = new GoogleAuthProvider();
     signInWithPopup(auth, provider)
+      .then(() => {
+        toast({
+            title: 'Successfully Signed In!',
+            description: 'Welcome back!',
+        });
+      })
       .catch((error) => {
         console.error("Error signing in with Google", error);
         toast({
@@ -178,6 +225,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const signOut = () => {
     firebaseSignOut(auth).then(() => {
         setUser(null);
+        setAllPosts([]);
+        setAllContentPlans([]);
         router.push('/login');
     }).catch((error) => {
       console.error("Error signing out", error);
@@ -191,7 +240,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const value = { user, posts, contentPlans, updateProfile, updatePost, addPost, addContentPlan, availableTopics, availableFrequencies, getPostById, deletePost, copyPost, generatedPosts, setGeneratedPosts, activeTeam, switchTeam, addTeam, isOnboardingCompleted, completeOnboarding, signInWithGoogle, signOut };
   
   if (user === undefined) {
-    return null; // Render nothing while waiting for auth state
+    return null;
   }
 
   return (
