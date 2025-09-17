@@ -65,7 +65,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           
           setUser({ ...userData, uid: firebaseUser.uid, teams });
         } else {
-          // New user, create a temporary profile in state to guide to onboarding
+          // New user, create profile in Firestore immediately
           const newUserProfile: UserProfile = {
             uid: firebaseUser.uid,
             name: firebaseUser.displayName || 'New User',
@@ -77,6 +77,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             postFrequency: '',
             signature: '',
           };
+          // Save the new user profile to Firestore
+          const { teams, ...userProfileToSave } = newUserProfile;
+          await setDoc(userRef, userProfileToSave);
           setUser(newUserProfile);
         }
       } else {
@@ -134,7 +137,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     
     // Save the main user profile document (without teams array)
     const { teams, ...userProfileToSave } = finalUserProfile;
-    await setDoc(userRef, userProfileToSave);
+    await setDoc(userRef, userProfileToSave, { merge: true });
 
     setUser(finalUserProfile);
     router.push('/calendar');
@@ -143,6 +146,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const signInWithGoogle = () => {
     const provider = new GoogleAuthProvider();
     signInWithPopup(auth, provider)
+      .then(() => {
+          toast({
+              title: 'Login Successful',
+              description: 'Welcome back!',
+          });
+          // Navigation is handled by the useEffect watching auth state
+      })
       .catch((error) => {
         console.error("Error signing in with Google", error);
         toast({
@@ -237,3 +247,5 @@ export const useApp = () => {
   }
   return context;
 };
+
+    
