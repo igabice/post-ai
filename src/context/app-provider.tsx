@@ -48,20 +48,27 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
-        // For this example, we'll merge the Firebase user with some default data.
-        // In a real app, you would fetch this user's profile from your database.
-        setUser(prevUser => ({
-          ...prevUser,
-          name: firebaseUser.displayName || 'New User',
-          avatarUrl: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/100/100`,
-          // Keep onboarding status, teams etc. from the existing state if it exists
-          // This is a simplification. A real app would have more robust logic.
-          isOnboardingCompleted: prevUser ? prevUser.isOnboardingCompleted : false,
-          teams: prevUser ? prevUser.teams : [],
-          activeTeamId: prevUser ? prevUser.activeTeamId : '',
-          topicPreferences: prevUser ? prevUser.topicPreferences : [],
-          postFrequency: prevUser ? prevUser.postFrequency : '',
-        }));
+        setUser(prevUser => {
+          // If there's an existing user, merge to preserve onboarding state etc.
+          // In a real app this would be a database fetch.
+          if (prevUser && prevUser.name !== 'New User') {
+            return {
+              ...prevUser,
+              name: firebaseUser.displayName || prevUser.name,
+              avatarUrl: firebaseUser.photoURL || prevUser.avatarUrl,
+            }
+          }
+          // If no user exists, create a new one.
+          return {
+            name: firebaseUser.displayName || 'New User',
+            avatarUrl: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/100/100`,
+            isOnboardingCompleted: false,
+            teams: [],
+            activeTeamId: '',
+            topicPreferences: [],
+            postFrequency: '',
+          };
+        });
       } else {
         setUser(null);
       }
