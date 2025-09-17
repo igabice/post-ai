@@ -14,7 +14,7 @@ import {
 } from 'firebase/auth';
 
 interface AppContextType {
-  user: UserProfile | null;
+  user: UserProfile | null | undefined; // Allow undefined for initial loading state
   posts: Post[];
   contentPlans: ContentPlan[];
   generatedPosts: Post[];
@@ -44,36 +44,37 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [allPosts, setAllPosts] = useState<Post[]>(initialPosts);
   const [allContentPlans, setAllContentPlans] = useState<ContentPlan[]>([]);
   const [generatedPosts, setGeneratedPosts] = useState<Post[]>([]);
-  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
-        // This is the simplified, correct logic.
-        // When a user is authenticated, create their profile.
-        const newUserProfile: UserProfile = {
-          name: firebaseUser.displayName || 'New User',
-          avatarUrl: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/100/100`,
-          isOnboardingCompleted: false, // Will be updated in onboarding
-          teams: [],
-          activeTeamId: '',
-          topicPreferences: [],
-          postFrequency: '',
-          signature: '',
-        };
+        // When Firebase confirms a user is logged in, we update our app's state.
+        // We retrieve the existing user profile from our state if it exists,
+        // or create a new one if it's a fresh login.
         setUser(prevUser => {
-          // Only update if it's a new login to prevent state churn on hot-reloads of an already logged-in user.
-          if (!prevUser || prevUser.name !== newUserProfile.name) {
-            return newUserProfile;
-          }
-          return prevUser;
-        });
+            const isNewUser = !prevUser || prevUser.name !== firebaseUser.displayName;
 
+            if (isNewUser) {
+                return {
+                    name: firebaseUser.displayName || 'New User',
+                    avatarUrl: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/100/100`,
+                    isOnboardingCompleted: false, // Default for new user
+                    teams: [],
+                    activeTeamId: '',
+                    topicPreferences: [],
+                    postFrequency: '',
+                    signature: '',
+                };
+            }
+            // If user already exists in state, keep it to avoid unnecessary re-renders.
+            // But we must merge any potential changes from their profile if needed in future.
+            // For now, returning the prevUser is safe if they are not new.
+            return prevUser;
+        });
       } else {
-        // User is signed out.
+        // User is signed out, clear the user state.
         setUser(null);
       }
-      setAuthChecked(true); // Mark authentication as checked
     });
 
     return () => unsubscribe();
@@ -210,9 +211,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     signInWithGoogle, 
     signOut 
   };
-
-  if (!authChecked) {
-    return null; // Render nothing until auth state is determined
+  
+  // Render nothing until the initial auth state has been determined.
+  if (user === undefined) {
+    return null; 
   }
 
   return (
