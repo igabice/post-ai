@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Icons } from '@/components/icons';
 import { Chrome, Facebook, MessageSquare, Heart, Send, Repeat, BarChart2 } from 'lucide-react';
+import Footer from '@/components/about-app/Footer';
 
 function DoodleBackground() {
     const icons = [
@@ -36,7 +37,7 @@ export default function LoginPage() {
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center bg-background p-4 overflow-hidden">
         <DoodleBackground />
-      <div className="z-10 w-full flex flex-col items-center">
+      <main className="z-10 w-full flex flex-col items-center flex-grow">
         <div className="mb-8 text-center">
             <h1 className="text-4xl font-bold tracking-tighter">
             Stop managing posts, start building a brand.
@@ -62,7 +63,8 @@ export default function LoginPage() {
             </Button>
             </CardContent>
         </Card>
-      </div>
+      </main>
+      <Footer />
     </div>
   );
 }

@@ -1,5 +1,8 @@
-
-export type PostStatus = 'Draft' | 'Scheduled' | 'Published' | 'Needs Verification';
+export type PostStatus =
+  | "Draft"
+  | "Scheduled"
+  | "Published"
+  | "Needs Verification";
 
 export type Post = {
   id: string;
@@ -16,13 +19,29 @@ export type Post = {
   };
 };
 
+export type Permissions = {
+  createPost: boolean;
+  editPost: boolean;
+  createContentPlan: boolean;
+  sendInvites: boolean;
+  isAdmin: boolean;
+};
+
+export type TeamMember = {
+  status: 'active' | 'disabled';
+  permissions: Permissions;
+};
+
 export type Team = {
-    id: string;
-    name: string;
-    description: string;
-}
+  id: string;
+  name: string;
+  description: string;
+  createdAt: any;
+  members: { [uid: string]: TeamMember };
+};
 
 export type UserProfile = {
+  uid: string;
   name: string;
   avatarUrl: string;
   topicPreferences: string[];
@@ -31,6 +50,10 @@ export type UserProfile = {
   teams: Team[];
   activeTeamId: string;
   isOnboardingCompleted: boolean;
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+  defaultLayout: string;
+  updatedAt: any;
 };
 
 export type ContentPlan = {
@@ -43,18 +66,31 @@ export type ContentPlan = {
   createdAt: Date;
   startDate: Date;
   endDate: Date;
-}
+};
+
+export type Invitation = {
+  id: string;
+  teamId: string;
+  inviteeEmail: string;
+  status: 'pending' | 'accepted';
+  createdAt: any; // Firestore server timestamp
+};
 
 export const availableTopics = [
-  'Technology',
-  'Real Estate',
-  'Marketing',
-  'Finance',
-  'Health & Wellness',
-  'Startups',
-  'AI & Machine Learning',
-  'E-commerce',
-  'Software Development',
+  "Technology",
+  "Real Estate",
+  "Marketing",
+  "Finance",
+  "Health & Wellness",
+  "Startups",
+  "AI & Machine Learning",
+  "E-commerce",
+  "Software Development",
 ];
 
-export const availableFrequencies = ['3x a week', '5x a week', '1x a day', '2x a day'];
+export const availableFrequencies = [
+  "3x a week",
+  "5x a week",
+  "1x a day",
+  "2x a day",
+];
