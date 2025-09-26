@@ -5,6 +5,7 @@ import {
   collection,
   getDoc,
   updateDoc,
+  setDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { UserProfile, Team, TeamMember, Permissions } from "@/lib/types";
@@ -95,4 +96,21 @@ export const getUserProfile = async (
 export const updateUserActiveTeam = async (userId: string, teamId: string) => {
   const userRef = doc(db, "users", userId);
   await updateDoc(userRef, { activeTeamId: teamId });
+};
+
+// services/user.ts - Add missing function
+export const createUserProfile = async (
+  userProfile: UserProfile
+): Promise<void> => {
+  try {
+    const userRef = doc(db, "users", userProfile.uid);
+    await setDoc(userRef, {
+      ...userProfile,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error("Error creating user profile:", error);
+    throw new Error("Failed to create user profile");
+  }
 };

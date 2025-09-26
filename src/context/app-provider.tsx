@@ -3,7 +3,6 @@
 import React, {
   createContext,
   useContext,
-  useState,
   ReactNode,
   useMemo,
   useEffect,
@@ -16,13 +15,10 @@ import {
   availableTopics,
   availableFrequencies,
 } from "@/lib/types";
-import { posts as initialPosts } from "@/lib/data";
 import { auth, db } from "@/lib/firebase";
 import {
   doc,
-  serverTimestamp,
   setDoc,
-  writeBatch,
   collection,
   getDoc,
   query,
@@ -30,6 +26,7 @@ import {
   getDocs,
   updateDoc,
   arrayUnion,
+  Timestamp,
 } from "firebase/firestore";
 import {
   onAuthStateChanged,
@@ -49,9 +46,12 @@ import {
 import {
   completeOnboardingInFirestore,
   updateUserActiveTeam,
+  createUserProfile,
 } from "@/services/user";
 import { addTeamToFirestore } from "@/services/teams";
 import { acceptInvite as acceptInviteInFirestore } from "@/services/invites";
+import { useAsyncSafeState } from "@/hooks/useAsyncSafeState";
+import { stateManager } from "@/lib/stateManager";
 
 interface AppContextType {
   user: UserProfile | null | undefined;
@@ -60,6 +60,7 @@ interface AppContextType {
   generatedPosts: Post[];
   activeTeam: Team | undefined;
   isOnboardingCompleted: boolean;
+  isLoading: boolean;
   setGeneratedPosts: (posts: Post[]) => void;
   updateProfile: (profile: Partial<UserProfile>) => Promise<void>;
   updatePost: (postId: string, postData: Partial<Post>) => Promise<void>;
@@ -74,7 +75,7 @@ interface AppContextType {
   availableTopics: string[];
   availableFrequencies: string[];
   getPostById: (postId: string) => Post | undefined;
-  switchTeam: (teamId: string) => void;
+  switchTeam: (teamId: string) => Promise<void>;
   addTeam: (
     teamData: Omit<Team, "id" | "createdAt" | "members">
   ) => Promise<boolean>;
@@ -97,138 +98,194 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<UserProfile | null | undefined>(undefined);
-  const [allPosts, setAllPosts] = useState<Post[]>([]);
-  const [allContentPlans, setAllContentPlans] = useState<ContentPlan[]>([]);
-  const [generatedPosts, setGeneratedPosts] = useState<Post[]>([]);
+  const [user, setUser] = useAsyncSafeState<UserProfile | null | undefined>(
+    undefined
+  );
+  const [allPosts, setAllPosts] = useAsyncSafeState<Post[]>([]);
+  const [allContentPlans, setAllContentPlans] = useAsyncSafeState<
+    ContentPlan[]
+  >([]);
+  const [generatedPosts, setGeneratedPosts] = useAsyncSafeState<Post[]>([]);
+  const [isLoading, setIsLoading] = useAsyncSafeState(false);
   const { toast } = useToast();
   const router = useRouter();
   const pathname = usePathname();
 
+  // Safe date conversion utility
+  const convertToDate = (date: any): Date => {
+    if (date instanceof Date) return date;
+    if (date instanceof Timestamp) return date.toDate();
+    if (typeof date === "string") return new Date(date);
+    return new Date();
+  };
+
+  // Enhanced auth state handler with proper error handling
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(
       auth,
       async (firebaseUser: FirebaseUser | null) => {
-        if (firebaseUser) {
-          const userRef = doc(db, "users", firebaseUser.uid);
-          const docSnap = await getDoc(userRef);
+        try {
+          setIsLoading(true);
 
-          if (docSnap.exists()) {
-            setUser(docSnap.data() as UserProfile);
+          if (firebaseUser) {
+            await stateManager.executeWithLock(
+              `auth-${firebaseUser.uid}`,
+              async () => {
+                const userRef = doc(db, "users", firebaseUser.uid);
+                const docSnap = await getDoc(userRef);
+
+                if (docSnap.exists()) {
+                  const userData = docSnap.data();
+                  // Validate user data structure
+                  if (userData && typeof userData === "object") {
+                    setUser(userData as UserProfile);
+                  } else {
+                    throw new Error("Invalid user data structure");
+                  }
+                } else {
+                  // Create new user profile with rollback capability
+                  try {
+                    const newUserProfile: UserProfile = {
+                      uid: firebaseUser.uid,
+                      name: firebaseUser.displayName || "New User",
+                      avatarUrl:
+                        firebaseUser.photoURL ||
+                        `https://picsum.photos/seed/${firebaseUser.uid}/100/100`,
+                      isOnboardingCompleted: false,
+                      teams: [],
+                      activeTeamId: "",
+                      topicPreferences: [],
+                      postFrequency: "",
+                      signature: "",
+                      updatedAt: new Date().toISOString(),
+                      defaultLayout: "calendar",
+                    };
+
+                    await createUserProfile(newUserProfile);
+                    setUser(newUserProfile);
+                  } catch (error) {
+                    console.error("Failed to create user profile:", error);
+                    // Don't set user state if Firestore creation fails
+                    setUser(null);
+                  }
+                }
+              }
+            );
           } else {
-            const newUserProfile: UserProfile = {
-              uid: firebaseUser.uid,
-              name: firebaseUser.displayName || "New User",
-              avatarUrl:
-                firebaseUser.photoURL ||
-                `https://picsum.photos/seed/${firebaseUser.uid}/100/100`,
-              isOnboardingCompleted: false,
-              teams: [],
-              activeTeamId: "",
-              topicPreferences: [],
-              postFrequency: "",
-              signature: "",
-              updatedAt: "",
-              defaultLayout: "calendar",
-            };
-            setUser(newUserProfile);
+            setUser(null);
           }
-        } else {
+        } catch (error) {
+          console.error("Auth state change error:", error);
           setUser(null);
+        } finally {
+          setIsLoading(false);
         }
       }
     );
 
     return () => unsubscribe();
-  }, []);
+  }, [setUser, setIsLoading]);
 
+  // Debounced posts fetching with cleanup
   useEffect(() => {
+    if (!user?.activeTeamId) {
+      setAllPosts([]);
+      return;
+    }
+
     const fetchPosts = async () => {
-      if (user?.activeTeamId) {
-        const postsQuery = query(
-          collection(db, "posts"),
-          where("teamId", "==", user.activeTeamId)
+      try {
+        setIsLoading(true);
+        await stateManager.executeWithLock(
+          `posts-${user.activeTeamId}`,
+          async () => {
+            const postsQuery = query(
+              collection(db, "posts"),
+              where("teamId", "==", user.activeTeamId)
+            );
+            const querySnapshot = await getDocs(postsQuery);
+            const postsData = querySnapshot.docs.map((doc) => ({
+              ...doc.data(),
+              id: doc.id,
+            })) as Post[];
+
+            const postsWithDateObjects = postsData.map((post) => ({
+              ...post,
+              date: convertToDate(post.date),
+            }));
+
+            setAllPosts(postsWithDateObjects);
+          }
         );
-        const querySnapshot = await getDocs(postsQuery);
-        const postsData = querySnapshot.docs.map((doc) => ({
-          ...doc.data(),
-          id: doc.id,
-        })) as Post[];
-
-        const postsWithDateObjects = postsData.map((post) => ({
-          ...post,
-          date: (post.date as any).toDate(),
-        }));
-
-        setAllPosts(postsWithDateObjects);
+      } catch (error) {
+        console.error("Error fetching posts:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load posts",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    fetchPosts();
-  }, [user?.activeTeamId]);
+    const timeoutId = setTimeout(fetchPosts, 300); // Debounce
+    return () => clearTimeout(timeoutId);
+  }, [user?.activeTeamId, setAllPosts, setIsLoading, toast]);
+
+  // Navigation logic with proper sequencing
+  useEffect(() => {
+    if (user === undefined || isLoading) return;
+
+    const isAuthPage =
+      pathname.startsWith("/login") || pathname.startsWith("/register");
+    const isOnboardingPage = pathname.startsWith("/onboarding");
+
+    if (user) {
+      if (isAuthPage) {
+        router.push("/calendar");
+        return;
+      }
+
+      if (user.isOnboardingCompleted) {
+        if (isOnboardingPage) {
+          router.push("/calendar");
+        }
+      } else if (!isOnboardingPage) {
+        router.push("/onboarding/welcome");
+      }
+    } else if (user === null && !isAuthPage) {
+      router.push("/login");
+    }
+  }, [user, isLoading, router, pathname]);
 
   const isOnboardingCompleted = useMemo(
     () => user?.isOnboardingCompleted || false,
     [user]
   );
 
-  useEffect(() => {
-    if (user === undefined) return; // Wait for user to be loaded
-
-    const isAuthPage =
-      pathname.startsWith("/login") || pathname.startsWith("/register");
-
-    if (user) {
-      // User is logged in
-      if (pathname.startsWith("/login")) {
-        // If on login page, redirect to calendar
-        router.push("/calendar");
-      } else if (isOnboardingCompleted) {
-        if (pathname.startsWith("/onboarding")) {
-          router.push("/calendar");
-        }
-      } else {
-        if (!pathname.startsWith("/onboarding")) {
-          router.push("/onboarding/welcome");
-        }
-      }
-    } else if (user === null && !isAuthPage) {
-      // User is not logged in and not on an auth page
-      router.push("/login");
-    }
-  }, [user, isOnboardingCompleted, router, pathname]);
-
-  const updateProfile = async (profile: Partial<UserProfile>) => {
-    if (!user) return;
-    const userRef = doc(db, "users", user.uid);
-    try {
-      await updateDoc(userRef, profile);
-      setUser((prev) => (prev ? { ...prev, ...profile } : null));
-      toast({ title: "Success", description: "Profile updated." });
-    } catch (error) {
-      console.error("Error updating profile: ", error);
-      toast({
-        title: "Error",
-        description: "There was a problem updating your profile.",
-        variant: "destructive",
-      });
-    }
-  };
-
+  // Optimistic update with rollback capability
   const updatePost = async (postId: string, postData: Partial<Post>) => {
+    const previousPosts = allPosts;
+
     try {
-      await updatePostInFirestore(postId, postData);
+      // Optimistic update
       setAllPosts((prev) =>
         prev.map((p) => (p.id === postId ? { ...p, ...postData } : p))
       );
+
+      await updatePostInFirestore(postId, postData);
       toast({ title: "Success", description: "Post updated." });
     } catch (error) {
+      // Rollback on error
+      setAllPosts(previousPosts);
       console.error("Error updating post: ", error);
       toast({
         title: "Error",
         description: "There was a problem updating the post.",
         variant: "destructive",
       });
+      throw error;
     }
   };
 
@@ -241,8 +298,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         description: "No active team selected.",
         variant: "destructive",
       });
-      return;
+      return undefined;
     }
+
     try {
       const newPost = await addPostToFirestore(postData, user.activeTeamId);
       setAllPosts((prev) =>
@@ -261,77 +319,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const addContentPlan = (
-    plan: Omit<ContentPlan, "id" | "createdAt" | "teamId">
-  ) => {
-    const newPlan: ContentPlan = {
-      ...plan,
-      id: new Date().toISOString() + Math.random(),
-      teamId: user?.activeTeamId || "",
-      createdAt: new Date(),
-    };
-    setAllContentPlans((prev) => [newPlan, ...prev]);
-  };
-
-  const deletePost = async (postId: string) => {
-    try {
-      await deletePostFromFirestore(postId);
-      setAllPosts((prev) => prev.filter((p) => p.id !== postId));
-      toast({ title: "Success", description: "Post deleted." });
-    } catch (error) {
-      console.error("Error deleting post: ", error);
-      toast({
-        title: "Error",
-        description: "There was a problem deleting the post.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const copyPost = async (postId: string) => {
-    if (!user || !user.activeTeamId) {
-      toast({
-        title: "Error",
-        description: "No active team selected.",
-        variant: "destructive",
-      });
-      return;
-    }
-    try {
-      const postToCopy = await getPostFromFirestore(postId);
-      if (postToCopy) {
-        const postData: Omit<Post, "id" | "analytics" | "teamId"> = {
-          title: `${postToCopy.title} (Copy)`,
-          content: postToCopy.content,
-          date: new Date(), // or postToCopy.date
-          status: "Draft",
-          autoPublish: false,
-        };
-        const newPost = await addPostToFirestore(postData, user.activeTeamId);
-        setAllPosts((prev) =>
-          [...prev, newPost].sort((a, b) => b.date.getTime() - a.date.getTime())
-        );
-        toast({ title: "Success", description: "Post copied." });
-      }
-    } catch (error) {
-      console.error("Error copying post: ", error);
-      toast({
-        title: "Error",
-        description: "There was a problem copying the post.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const getPostById = (postId: string) => {
-    return allPosts.find((p) => p.id === postId);
-  };
-
   const switchTeam = async (teamId: string) => {
     if (!user) return;
-    setUser((prev) => (prev ? { ...prev, activeTeamId: teamId } : null));
+
     try {
-      await updateUserActiveTeam(user.uid, teamId);
+      setIsLoading(true);
+      await stateManager.executeWithLock(
+        `switch-team-${user.uid}`,
+        async () => {
+          // Update Firestore first
+          await updateUserActiveTeam(user.uid, teamId);
+          // Then update local state
+          setUser((prev) => (prev ? { ...prev, activeTeamId: teamId } : null));
+        }
+      );
       toast({ title: "Success", description: "Active team switched." });
     } catch (error) {
       console.error("Error switching active team: ", error);
@@ -340,72 +341,48 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         description: "There was a problem switching the active team.",
         variant: "destructive",
       });
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
-
-  // const addTeam = async (teamData: Omit<Team, "id" | "createdAt" | "members">): Promise<boolean> => {
-  //   if (!user) return false;
-  //   try {
-  //     const newTeam = await addTeamToFirestore(teamData, user.uid);
-  //     const newTeamForUser = { ...newTeam, createdAt: new Date().toISOString() };
-
-  //     const userRef = doc(db, "users", user.uid);
-  //     await setDoc(userRef, {
-  //       teams: arrayUnion(newTeamForUser)
-  //     }, { merge: true });
-
-  //     // Re-fetch user to get updated team list
-  //     const docSnap = await getDoc(userRef);
-  //     if (docSnap.exists()) {
-  //       const updatedUser = docSnap.data() as UserProfile;
-  //       // Also set the new team as active
-  //       updatedUser.activeTeamId = newTeam.id;
-  //       setUser(updatedUser);
-  //     }
-
-  //     toast({ title: "Success", description: "Team created." });
-  //     return true;
-  //   } catch (error) {
-  //     console.error("Error adding team: ", error);
-  //     toast({
-  //       title: "Error",
-  //       description: "There was a problem adding the team.",
-  //       variant: "destructive",
-  //     });
-  //     return false;
-  //   }
-  // };
 
   const addTeam = async (
     teamData: Omit<Team, "id" | "createdAt" | "members">
   ): Promise<boolean> => {
     if (!user) return false;
+
     try {
-      const newTeam = await addTeamToFirestore(teamData, user.uid);
-      const newTeamForUser = {
-        ...newTeam,
-        createdAt: new Date().toISOString(),
-      };
+      return await stateManager.executeWithLock(
+        `add-team-${user.uid}`,
+        async () => {
+          const newTeam = await addTeamToFirestore(teamData, user.uid);
+          const newTeamForUser = {
+            ...newTeam,
+            createdAt: new Date().toISOString(),
+          };
 
-      const userRef = doc(db, "users", user.uid);
-      await setDoc(
-        userRef,
-        {
-          teams: arrayUnion(newTeamForUser),
-          activeTeamId: newTeam.id, // Set activeTeamId here
-        },
-        { merge: true }
+          const userRef = doc(db, "users", user.uid);
+          await setDoc(
+            userRef,
+            {
+              teams: arrayUnion(newTeamForUser),
+              activeTeamId: newTeam.id,
+            },
+            { merge: true }
+          );
+
+          // Re-fetch user to ensure consistency
+          const docSnap = await getDoc(userRef);
+          if (docSnap.exists()) {
+            const updatedUser = docSnap.data() as UserProfile;
+            setUser(updatedUser);
+          }
+
+          toast({ title: "Success", description: "Team created." });
+          return true;
+        }
       );
-
-      // Re-fetch user to get updated team list
-      const docSnap = await getDoc(userRef);
-      if (docSnap.exists()) {
-        const updatedUser = docSnap.data() as UserProfile;
-        setUser(updatedUser);
-      }
-
-      toast({ title: "Success", description: "Team created." });
-      return true;
     } catch (error) {
       console.error("Error adding team: ", error);
       toast({
@@ -441,6 +418,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
+      setIsLoading(true);
       const updatedUserForState = await completeOnboardingInFirestore(
         user,
         userData,
@@ -456,70 +434,23 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           "There was a problem saving your information. Please try again.",
         variant: "destructive",
       });
-    }
-  };
-
-  const sendInvite = async (teamId: string, inviteeEmail: string) => {
-    try {
-      const response = await fetch("/api/send-invite", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ teamId, inviteeEmail }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to send invitation");
-      }
-
-      const data = await response.json();
-      toast({ title: "Success", description: "Invitation sent." });
-      return data.previewUrl; // Returning the Ethereal preview URL
-    } catch (error) {
-      console.error("Error sending invite: ", error);
-      toast({
-        title: "Error",
-        description: "There was a problem sending the invitation.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const acceptInvite = async (token: string) => {
-    if (!user) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to accept an invite.",
-        variant: "destructive",
-      });
-      return;
-    }
-    try {
-      await acceptInviteInFirestore(token, user);
-      // Re-fetch user to get updated team list
-      const userRef = doc(db, "users", user.uid);
-      const docSnap = await getDoc(userRef);
-      if (docSnap.exists()) {
-        setUser(docSnap.data() as UserProfile);
-      }
-      toast({ title: "Success", description: "Invitation accepted!" });
-      router.push("/calendar");
-    } catch (error) {
-      console.error("Error accepting invite: ", error);
-      toast({
-        title: "Error",
-        description:
-          (error as Error).message ||
-          "There was a problem accepting the invitation.",
-        variant: "destructive",
-      });
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const signInWithGoogle = () => {
     const provider = new GoogleAuthProvider();
     signInWithPopup(auth, provider).catch((error) => {
+      if (error.code === "auth/popup-closed-by-user") {
+        toast({
+          title: "Sign-in cancelled",
+          description:
+            "You closed the sign-in window before completing the process.",
+        });
+        return;
+      }
       console.error("Error signing in with Google", error);
       toast({
         title: "Login Failed",
@@ -529,25 +460,34 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  const signOut = () => {
-    firebaseSignOut(auth)
-      .then(() => {
-        setUser(null);
-        router.push("/login");
-      })
-      .catch((error) => {
-        console.error("Error signing out", error);
+  const signOut = async () => {
+    try {
+      await firebaseSignOut(auth);
+      setUser(null);
+      setAllPosts([]);
+      setAllContentPlans([]);
+      router.push("/login");
+    } catch (error) {
+      console.error("Error signing out", error);
+      toast({
+        title: "Error",
+        description: "There was a problem signing out.",
+        variant: "destructive",
       });
+    }
   };
 
+  // Memoized derived values
   const activeTeam = useMemo(
     () => user?.teams.find((t) => t.id === user.activeTeamId),
     [user?.teams, user?.activeTeamId]
   );
+
   const posts = useMemo(
     () => (user ? allPosts.filter((p) => p.teamId === user.activeTeamId) : []),
     [allPosts, user]
   );
+
   const contentPlans = useMemo(
     () =>
       user ? allContentPlans.filter((p) => p.teamId === user.activeTeamId) : [],
@@ -558,30 +498,164 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     user,
     posts,
     contentPlans,
-    updateProfile,
-    updatePost,
-    addPost,
-    addContentPlan,
-    availableTopics,
-    availableFrequencies,
-    getPostById,
-    deletePost,
-    copyPost,
     generatedPosts,
     setGeneratedPosts,
     activeTeam,
+    isOnboardingCompleted,
+    isLoading,
+    updateProfile: async (profile: Partial<UserProfile>) => {
+      if (!user) return;
+      const userRef = doc(db, "users", user.uid);
+      try {
+        await updateDoc(userRef, profile);
+        setUser((prev) => (prev ? { ...prev, ...profile } : null));
+        toast({ title: "Success", description: "Profile updated." });
+      } catch (error) {
+        console.error("Error updating profile: ", error);
+        toast({
+          title: "Error",
+          description: "There was a problem updating your profile.",
+          variant: "destructive",
+        });
+        throw error;
+      }
+    },
+    updatePost,
+    addPost,
+    addContentPlan: (
+      plan: Omit<ContentPlan, "id" | "createdAt" | "teamId">
+    ) => {
+      const newPlan: ContentPlan = {
+        ...plan,
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        teamId: user?.activeTeamId || "",
+        createdAt: new Date(),
+      };
+      setAllContentPlans((prev) => [newPlan, ...prev]);
+    },
+    deletePost: async (postId: string) => {
+      const previousPosts = allPosts;
+      try {
+        setAllPosts((prev) => prev.filter((p) => p.id !== postId));
+        await deletePostFromFirestore(postId);
+        toast({ title: "Success", description: "Post deleted." });
+      } catch (error) {
+        setAllPosts(previousPosts);
+        console.error("Error deleting post: ", error);
+        toast({
+          title: "Error",
+          description: "There was a problem deleting the post.",
+          variant: "destructive",
+        });
+        throw error;
+      }
+    },
+    copyPost: async (postId: string) => {
+      if (!user || !user.activeTeamId) {
+        toast({
+          title: "Error",
+          description: "No active team selected.",
+          variant: "destructive",
+        });
+        return;
+      }
+      try {
+        const postToCopy = await getPostFromFirestore(postId);
+        if (postToCopy) {
+          const postData: Omit<Post, "id" | "analytics" | "teamId"> = {
+            title: `${postToCopy.title} (Copy)`,
+            content: postToCopy.content,
+            date: new Date(),
+            status: "Draft",
+            autoPublish: false,
+          };
+          const newPost = await addPostToFirestore(postData, user.activeTeamId);
+          setAllPosts((prev) =>
+            [...prev, newPost].sort(
+              (a, b) => b.date.getTime() - a.date.getTime()
+            )
+          );
+          toast({ title: "Success", description: "Post copied." });
+        }
+      } catch (error) {
+        console.error("Error copying post: ", error);
+        toast({
+          title: "Error",
+          description: "There was a problem copying the post.",
+          variant: "destructive",
+        });
+        throw error;
+      }
+    },
+    getPostById: (postId: string) => allPosts.find((p) => p.id === postId),
     switchTeam,
     addTeam,
-    isOnboardingCompleted,
     completeOnboarding,
     signInWithGoogle,
     signOut,
-    sendInvite,
-    acceptInvite,
+    sendInvite: async (teamId: string, inviteeEmail: string) => {
+      try {
+        const response = await fetch("/api/send-invite", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ teamId, inviteeEmail }),
+        });
+
+        if (!response.ok) throw new Error("Failed to send invitation");
+
+        const data = await response.json();
+        toast({ title: "Success", description: "Invitation sent." });
+        return data.previewUrl;
+      } catch (error) {
+        console.error("Error sending invite: ", error);
+        toast({
+          title: "Error",
+          description: "There was a problem sending the invitation.",
+          variant: "destructive",
+        });
+        throw error;
+      }
+    },
+    acceptInvite: async (token: string) => {
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to accept an invite.",
+          variant: "destructive",
+        });
+        return;
+      }
+      try {
+        await acceptInviteInFirestore(token, user);
+        const userRef = doc(db, "users", user.uid);
+        const docSnap = await getDoc(userRef);
+        if (docSnap.exists()) {
+          setUser(docSnap.data() as UserProfile);
+        }
+        toast({ title: "Success", description: "Invitation accepted!" });
+        router.push("/calendar");
+      } catch (error) {
+        console.error("Error accepting invite: ", error);
+        toast({
+          title: "Error",
+          description:
+            (error as Error).message ||
+            "There was a problem accepting the invitation.",
+          variant: "destructive",
+        });
+        throw error;
+      }
+    },
+    availableTopics,
+    availableFrequencies,
   };
 
-  if (user === undefined) {
-    return null; // Render nothing while waiting for auth state
+  if (user === undefined || isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+      </div>
+    );
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
