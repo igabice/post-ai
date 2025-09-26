@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   User,
   ClipboardList,
+  Users,
   type LucideProps,
 } from 'lucide-react';
 
@@ -15,4 +16,5 @@ export const Icons = {
   Dashboard: LayoutDashboard,
   Profile: User,
   ContentPlans: ClipboardList,
+  Users: Users,
 };

@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -35,7 +34,6 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
-import { useToast } from '@/hooks/use-toast';
 
 const newTeamSchema = z.object({
   name: z.string().min(3, 'Team name must be at least 3 characters.'),
@@ -46,7 +44,6 @@ export function TeamSwitcher() {
   const { user, activeTeam, switchTeam, addTeam } = useApp();
   const [popoverOpen, setPopoverOpen] = React.useState(false);
   const [dialogOpen, setDialogOpen] = React.useState(false);
-  const { toast } = useToast();
 
   const form = useForm<z.infer<typeof newTeamSchema>>({
     resolver: zodResolver(newTeamSchema),
@@ -57,16 +54,15 @@ export function TeamSwitcher() {
   });
 
   const onSubmit = async (data: z.infer<typeof newTeamSchema>) => {
-    await addTeam({
+    const success = await addTeam({
       name: data.name,
       description: data.description || '',
     });
-    toast({
-      title: 'Team Created!',
-      description: `The "${data.name}" team has been created and selected.`,
-    });
-    setDialogOpen(false);
-    form.reset();
+
+    if (success) {
+      setDialogOpen(false);
+      form.reset();
+    }
   };
   
   const handleTeamSelect = (teamId: string) => {

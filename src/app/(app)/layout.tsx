@@ -1,13 +1,12 @@
+"use client";
 
-'use client';
+import * as React from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import Image from "next/image";
 
-import * as React from 'react';
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import Image from 'next/image';
-
-import { cn } from '@/lib/utils';
-import { useApp } from '@/context/app-provider';
+import { cn } from "@/lib/utils";
+import { useApp } from "@/context/app-provider";
 import {
   SidebarProvider,
   Sidebar,
@@ -20,7 +19,7 @@ import {
   SidebarTrigger,
   SidebarInset,
   useSidebar,
-} from '@/components/ui/sidebar';
+} from "@/components/ui/sidebar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,16 +27,17 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
-import { Icons } from '@/components/icons';
-import { TeamSwitcher } from '@/components/team-switcher';
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Icons } from "@/components/icons";
+import { TeamSwitcher } from "@/components/team-switcher";
 
 const navItems = [
-  { href: '/calendar', icon: Icons.Calendar, label: 'Calendar' },
-  { href: '/dashboard', icon: Icons.Dashboard, label: 'Dashboard' },
-  { href: '/content-plans', icon: Icons.ContentPlans, label: 'Content Plans' },
-  { href: '/profile', icon: Icons.Profile, label: 'Profile' },
+  { href: "/calendar", icon: Icons.Calendar, label: "Calendar" },
+  { href: "/dashboard", icon: Icons.Dashboard, label: "Dashboard" },
+  { href: "/content-plans", icon: Icons.ContentPlans, label: "Content Plans" },
+  { href: "/teams", icon: Icons.Users, label: "Teams" },
+  { href: "/profile", icon: Icons.Profile, label: "Profile" },
 ];
 
 function AppLayoutContent({ children }: { children: React.ReactNode }) {
@@ -50,9 +50,9 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
     // We already check for user === undefined in the provider.
     // If user is null, it means they are not logged in.
     if (user === null) {
-      router.replace('/login');
+      router.replace("/login");
     } else if (!isOnboardingCompleted) {
-      router.replace('/onboarding/step1');
+      router.replace("/onboarding/step1");
     }
   }, [user, isOnboardingCompleted, router]);
 
@@ -63,7 +63,7 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
   if (!user || !isOnboardingCompleted) {
     return null;
   }
-  
+
   const handleLinkClick = () => {
     setOpenMobile(false);
   };
@@ -77,14 +77,17 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full">
-              <Image
-                src={user.avatarUrl}
-                alt={user.name}
-                width={36}
-                height={36}
-                className="rounded-full"
-                data-ai-hint="profile picture"
-              />
+              {user && (
+                <Image
+                  src={user.avatarUrl}
+                  alt={user.name}
+                  width={36}
+                  height={36}
+                  className="rounded-full"
+                  data-ai-hint="profile picture"
+                />
+              )}
+
               <span className="sr-only">Toggle user menu</span>
             </Button>
           </DropdownMenuTrigger>
@@ -114,7 +117,11 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
                     asChild
-                    isActive={pathname === item.href || (item.href === '/content-plans' && pathname.startsWith('/generate-plan'))}
+                    isActive={
+                      pathname === item.href ||
+                      (item.href === "/content-plans" &&
+                        pathname.startsWith("/generate-plan"))
+                    }
                     tooltip={item.label}
                     onClick={handleLinkClick}
                   >
@@ -129,16 +136,18 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
           </SidebarContent>
           <SidebarFooter className="p-4 border-t">
             <div className="flex items-center gap-3">
-              <Image
-                src={user.avatarUrl}
-                alt={user.name}
-                width={40}
-                height={40}
-                className="rounded-full"
-                data-ai-hint="profile picture"
-              />
+              {user && (
+                <Image
+                  src={user.avatarUrl}
+                  alt={user.name}
+                  width={40}
+                  height={40}
+                  className="rounded-full"
+                  data-ai-hint="profile picture"
+                />
+              )}
               <div className="overflow-hidden group-data-[collapsible=icon]:hidden">
-                <p className="font-semibold truncate">{user.name}</p>
+                <p className="font-semibold truncate">{user?.name}</p>
                 <p className="text-xs text-muted-foreground truncate">
                   Pro Plan
                 </p>
@@ -149,17 +158,28 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
 
         <main className="flex-1 p-4 sm:p-6">{children}</main>
       </div>
-       <footer className="border-t bg-background px-4 py-4 sm:px-6">
-          <div className="flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground gap-2">
-            <p>&copy; {new Date().getFullYear()} Content Compass. All rights reserved.</p>
-            <nav className="flex gap-4">
-              <Link href="/terms" className="hover:text-primary">Terms</Link>
-              <Link href="/privacy" className="hover:text-primary">Privacy Policy</Link>
-              <Link href="/about" className="hover:text-primary">About Us</Link>
-              <Link href="/contact" className="hover:text-primary">Contact Us</Link>
-            </nav>
-          </div>
-        </footer>
+      <footer className="border-t bg-background px-4 py-4 sm:px-6">
+        <div className="flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground gap-2">
+          <p>
+            &copy; {new Date().getFullYear()} Content Compass. All rights
+            reserved.
+          </p>
+          <nav className="flex gap-4">
+            <Link href="/terms" className="hover:text-primary">
+              Terms
+            </Link>
+            <Link href="/privacy" className="hover:text-primary">
+              Privacy Policy
+            </Link>
+            <Link href="/about" className="hover:text-primary">
+              About Us
+            </Link>
+            <Link href="/contact" className="hover:text-primary">
+              Contact Us
+            </Link>
+          </nav>
+        </div>
+      </footer>
     </>
   );
 }
