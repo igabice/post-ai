@@ -57,7 +57,10 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
   }, [user, isOnboardingCompleted, router]);
 
   // Render nothing while redirecting or if user is not ready.
-  if (user === null || !isOnboardingCompleted) {
+  // if (user === null || !isOnboardingCompleted) {
+  //   return null;
+  // }
+  if (!user || !isOnboardingCompleted) {
     return null;
   }
 
