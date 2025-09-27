@@ -66,6 +66,7 @@ interface AppContextType {
   isLoading: boolean;
   setGeneratedPosts: (posts: Post[]) => void;
   updateProfile: (profile: Partial<UserProfile>) => Promise<void>;
+  updateTeam: (teamId: string, teamData: Partial<Team>) => Promise<void>;
   updatePost: (postId: string, postData: Partial<Post>) => Promise<void>;
   addPost: (
     postData: Omit<Post, "id" | "analytics" | "teamId">
@@ -509,6 +510,32 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     [allContentPlans, user]
   );
 
+  const updateTeam = async (teamId: string, teamData: Partial<Team>) => {
+    if (!user) return;
+
+    try {
+      const teamRef = doc(db, "teams", teamId);
+      await updateDoc(teamRef, teamData);
+
+      setUser((prevUser) => {
+        if (!prevUser) return null;
+        const updatedTeams = prevUser.teams.map((team) =>
+          team.id === teamId ? { ...team, ...teamData } : team
+        );
+        return { ...prevUser, teams: updatedTeams };
+      });
+      toast({ title: "Success", description: "Team updated." });
+    } catch (error) {
+      console.error("Error updating team: ", error);
+      toast({
+        title: "Error",
+        description: "There was a problem updating the team.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   const value = {
     user,
     posts,
@@ -535,6 +562,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         throw error;
       }
     },
+    updateTeam,
     updatePost,
     addPost,
     addContentPlan: (

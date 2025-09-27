@@ -28,8 +28,18 @@ export type Permissions = {
 };
 
 export type TeamMember = {
-  status: 'active' | 'disabled';
+  status: "active" | "disabled";
   permissions: Permissions;
+};
+
+export type SocialMediaAccount = {
+  id: string;
+  name: string; // e.g., "Twitter", "Instagram"
+  userName: string; // e.g., "@myhandle"
+  title: string; // e.g., "Twitter", "Instagram"
+  image?: string; // URL to icon
+  profileLink?: string; // URL to profile
+  active: boolean;
 };
 
 export type Team = {
@@ -38,6 +48,7 @@ export type Team = {
   description: string;
   createdAt: any;
   members: { [uid: string]: TeamMember };
+  socialMediaAccounts: SocialMediaAccount[]; // New field
 };
 
 export type UserProfile = {
@@ -74,7 +85,7 @@ export type Invitation = {
   teamId: string;
   inviteeEmail: string;
   inviterId: string;
-  status: 'pending' | 'accepted';
+  status: "pending" | "accepted";
   createdAt: any; // Firestore server timestamp
 };
 

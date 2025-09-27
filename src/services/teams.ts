@@ -1,9 +1,18 @@
-import { doc, setDoc, serverTimestamp, collection } from "firebase/firestore";
+import {
+  doc,
+  setDoc,
+  serverTimestamp,
+  collection,
+  updateDoc,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Team, TeamMember, Permissions } from "@/lib/types";
+import { Team, TeamMember, Permissions, SocialMediaAccount } from "@/lib/types";
 
-export const addTeamToFirestore = async (teamData: Omit<Team, 'id' | 'createdAt' | 'members'>, userId: string): Promise<Team> => {
-  const teamCollectionRef = collection(db, 'teams');
+export const addTeamToFirestore = async (
+  teamData: Omit<Team, "id" | "createdAt" | "members">,
+  userId: string
+): Promise<Team> => {
+  const teamCollectionRef = collection(db, "teams");
   const newTeamRef = doc(teamCollectionRef);
   const newTeamId = newTeamRef.id;
 
@@ -16,7 +25,7 @@ export const addTeamToFirestore = async (teamData: Omit<Team, 'id' | 'createdAt'
   };
 
   const newMember: TeamMember = {
-    status: 'active',
+    status: "active",
     permissions: adminPermissions,
   };
 
@@ -27,8 +36,19 @@ export const addTeamToFirestore = async (teamData: Omit<Team, 'id' | 'createdAt'
     members: {
       [userId]: newMember,
     },
+    socialMediaAccounts: [],
   };
 
   await setDoc(newTeamRef, newTeam);
   return newTeam;
+};
+
+export const updateTeamSocialMediaAccounts = async (
+  teamId: string,
+  socialMediaAccounts: SocialMediaAccount[]
+): Promise<void> => {
+  const teamRef = doc(db, "teams", teamId);
+  await updateDoc(teamRef, {
+    socialMediaAccounts: socialMediaAccounts,
+  });
 };

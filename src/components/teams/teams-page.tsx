@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PendingInvitesList } from "./pending-invites-list";
+import { TeamConfigurationTab } from "./team-configuration-tab";
 
 interface EnrichedTeamMember extends TeamMember {
   profile?: UserProfile;
@@ -115,11 +116,15 @@ export default function TeamsPageClient() {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="members" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+      <Tabs defaultValue="configuration" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="configuration">Configuration</TabsTrigger>
           <TabsTrigger value="members">Members</TabsTrigger>
           <TabsTrigger value="invites">Invites</TabsTrigger>
         </TabsList>
+        <TabsContent value="configuration">
+          <TeamConfigurationTab />
+        </TabsContent>
         <TabsContent value="members">
           <Card>
             <CardHeader>

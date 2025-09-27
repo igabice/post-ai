@@ -102,3 +102,10 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom CSS for react-image-picker-editor to centralize the camera icon */
+.react-image-picker-editor > div {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
