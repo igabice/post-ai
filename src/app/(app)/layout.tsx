@@ -31,6 +31,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Icons } from "@/components/icons";
 import { TeamSwitcher } from "@/components/team-switcher";
+import { Bell } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 const navItems = [
   { href: "/calendar", icon: Icons.Calendar, label: "Calendar" },
@@ -74,6 +76,14 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
         <SidebarTrigger className="md:hidden" />
         <TeamSwitcher />
         <div className="flex-1">{/* Optional Header Title can go here */}</div>
+        <Button variant="ghost" size="icon" className="rounded-full relative">
+          <Bell className="h-5 w-5" />
+          {/* Placeholder for notification count */}
+          <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-xs">
+            3
+          </Badge>
+          <span className="sr-only">Notifications</span>
+        </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full">

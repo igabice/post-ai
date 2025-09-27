@@ -1,36 +1,23 @@
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
-import { sendInviteToTeamAdmin } from "@/services/invites";
 import { createTransporter } from "@/lib/nodemailer";
-import { getAdminDb } from "@/lib/firebase-admin";
 
 export async function POST(request: Request) {
-  const { teamId, inviteeEmail } = await request.json();
+  const { teamId, inviteeEmail, invitationId } = await request.json();
 
-  if (!teamId || !inviteeEmail) {
+  if (!teamId || !inviteeEmail || !invitationId) {
     return NextResponse.json(
-      { error: "Missing teamId or inviteeEmail" },
+      { error: "Missing teamId, inviteeEmail, or invitationId" },
       { status: 400 }
     );
   }
 
   try {
-    // 1. Create invitation in Firestore using Admin SDK
-    // const adminDb = getAdminDb();
-    // const invitationId = await sendInviteToTeamAdmin(
-    //   adminDb,
-    //   teamId,
-    //   inviteeEmail
-    // );
-
-    // 2. Get the transporter
     const { transporter, testAccount } = await createTransporter();
 
-    // 3. Construct the invitation link
     const origin = request.headers.get("origin") || "http://localhost:3000";
-    const inviteLink = `${origin}/accept-invite?token=${"invitationId"}`;
+    const inviteLink = `${origin}/accept-invite?token=${invitationId}`;
 
-    // 4. Send the email
     const info = await transporter.sendMail({
       from: '"Content Compass" <dev@dataulinzi.com>',
       to: inviteeEmail,
@@ -60,7 +47,6 @@ export async function POST(request: Request) {
 
     let previewUrl = null;
     if (testAccount) {
-      // Preview only available when sending through an Ethereal account
       previewUrl = nodemailer.getTestMessageUrl(info);
       console.log("Preview URL: %s", previewUrl);
     }

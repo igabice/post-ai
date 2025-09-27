@@ -55,6 +55,7 @@ export const completeOnboardingInFirestore = async (
     uid: user.uid,
     name: userData.name,
     avatarUrl: user.avatarUrl,
+    email: user.email,
     topicPreferences: userData.topicPreferences,
     postFrequency: userData.postFrequency,
     signature: userData.signature || "",

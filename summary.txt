@@ -1,0 +1,8 @@
+I have updated the accept-invite page to handle the login flow as you requested.
+
+Here's a summary of the changes:
+- If a user is not logged in when they visit the accept-invite page, they will now see a message and a 'Login with Google' button.
+- When they click the button and log in, the application will automatically proceed with accepting the invitation.
+
+This should provide the user experience you were looking for.
+

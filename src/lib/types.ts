@@ -42,6 +42,7 @@ export type Team = {
 
 export type UserProfile = {
   uid: string;
+  email: string;
   name: string;
   avatarUrl: string;
   topicPreferences: string[];
@@ -72,6 +73,7 @@ export type Invitation = {
   id: string;
   teamId: string;
   inviteeEmail: string;
+  inviterId: string;
   status: 'pending' | 'accepted';
   createdAt: any; // Firestore server timestamp
 };

@@ -1,35 +1,81 @@
-'use client';
+"use client";
 
-import React, { useState, useMemo } from 'react';
-import Link from 'next/link';
-import { format, isSameDay } from 'date-fns';
-import { DateRange } from 'react-day-picker';
-import { Calendar as CalendarIcon, List, Plus, Sparkles, MoreHorizontal, Copy, Trash2, Pencil, ChevronDown, X, Eye } from 'lucide-react';
-import { useApp } from '@/context/app-provider';
+import React, { useState, useMemo } from "react";
+import Link from "next/link";
+import { format, isSameDay } from "date-fns";
+import { DateRange } from "react-day-picker";
+import {
+  Calendar as CalendarIcon,
+  List,
+  Plus,
+  Sparkles,
+  MoreHorizontal,
+  Copy,
+  Trash2,
+  Pencil,
+  ChevronDown,
+  X,
+  Eye,
+} from "lucide-react";
+import { useApp } from "@/context/app-provider";
 
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar } from '@/components/ui/calendar';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuCheckboxItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { PostSheet } from './post-sheet';
-import type { Post, PostStatus } from '@/lib/types';
-import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
-import { Separator } from '../ui/separator';
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { PostSheet } from "./post-sheet";
+import type { Post, PostStatus } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { Separator } from "../ui/separator";
+import { CreatePostButton } from "../dashboard/create-post-button";
 
 export function CalendarClientPage() {
   const { posts, deletePost, copyPost } = useApp();
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(
+    new Date()
+  );
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [activePost, setActivePost] = useState<Post | null>(null);
   const [isPostListDialogOpen, setIsPostListDialogOpen] = useState(false);
   const [postsForSelectedDay, setPostsForSelectedDay] = useState<Post[]>([]);
-  const [statusFilter, setStatusFilter] = useState<PostStatus | 'All'>('All');
+  const [statusFilter, setStatusFilter] = useState<PostStatus | "All">("All");
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const { toast } = useToast();
@@ -39,7 +85,7 @@ export function CalendarClientPage() {
 
     setSelectedDate(date);
     const postsForDay = posts.filter((p) => isSameDay(p.date, date));
-    
+
     if (postsForDay.length > 1) {
       setPostsForSelectedDay(postsForDay);
       setIsPostListDialogOpen(true);
@@ -61,7 +107,7 @@ export function CalendarClientPage() {
     setActivePost(post);
     setIsSheetOpen(true);
   };
-  
+
   const handleNewPost = (date?: Date) => {
     setSelectedDate(date || new Date());
     setActivePost(null);
@@ -71,56 +117,61 @@ export function CalendarClientPage() {
   const handleCopyPost = (post: Post) => {
     copyPost(post.id);
     toast({
-      title: 'Post Copied',
+      title: "Post Copied",
       description: `A copy of "${post.title}" has been created as a draft.`,
     });
   };
-  
+
   const handleDeletePost = (postId: string) => {
     deletePost(postId);
-     toast({
-      title: 'Post Deleted',
-      description: 'The post has been successfully deleted.',
+    toast({
+      title: "Post Deleted",
+      description: "The post has been successfully deleted.",
     });
   };
 
-  const filteredPosts = useMemo(() => posts
-    .filter(post => {
-      const statusMatch = statusFilter === 'All' || post.status === statusFilter;
-      
-      let dateMatch = true;
-      if (dateRange?.from) {
-        const from = new Date(dateRange.from);
-        from.setHours(0,0,0,0);
-        const to = dateRange.to ? new Date(dateRange.to) : from;
-        to.setHours(23, 59, 59, 999);
-        dateMatch = post.date >= from && post.date <= to;
-      }
+  const filteredPosts = useMemo(
+    () =>
+      posts.filter((post) => {
+        const statusMatch =
+          statusFilter === "All" || post.status === statusFilter;
 
-      return statusMatch && dateMatch;
-    }), [posts, statusFilter, dateRange]);
+        let dateMatch = true;
+        if (dateRange?.from) {
+          const from = new Date(dateRange.from);
+          from.setHours(0, 0, 0, 0);
+          const to = dateRange.to ? new Date(dateRange.to) : from;
+          to.setHours(23, 59, 59, 999);
+          dateMatch = post.date >= from && post.date <= to;
+        }
 
+        return statusMatch && dateMatch;
+      }),
+    [posts, statusFilter, dateRange]
+  );
 
   const statusColors: { [key: string]: string } = {
-    Published: 'bg-green-100 text-green-800 border-green-200',
-    Scheduled: 'bg-blue-100 text-blue-800 border-blue-200',
-    'Needs Verification': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-    Draft: 'bg-gray-100 text-gray-800 border-gray-200',
+    Published: "bg-green-100 text-green-800 border-green-200",
+    Scheduled: "bg-blue-100 text-blue-800 border-blue-200",
+    "Needs Verification": "bg-yellow-100 text-yellow-800 border-yellow-200",
+    Draft: "bg-gray-100 text-gray-800 border-gray-200",
   };
 
-  const hasFilters = statusFilter !== 'All' || !!dateRange;
+  const hasFilters = statusFilter !== "All" || !!dateRange;
 
   return (
     <>
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <h1 className="text-3xl font-bold tracking-tight">Content Calendar</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Content Calendar
+          </h1>
           <div className="flex items-center gap-2">
             <Button variant="outline" asChild>
-                <Link href="/generate-plan">
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Generate Plan
-                </Link>
+              <Link href="/generate-plan">
+                <Sparkles className="mr-2 h-4 w-4" />
+                Generate Plan
+              </Link>
             </Button>
             <Button onClick={() => handleNewPost()}>
               <Plus className="mr-2 h-4 w-4" />
@@ -132,41 +183,68 @@ export function CalendarClientPage() {
         <Tabs defaultValue="calendar" className="w-full">
           <div className="flex justify-between items-center mb-4">
             <TabsList className="grid w-full grid-cols-2 sm:w-[400px]">
-              <TabsTrigger value="calendar"><CalendarIcon className="mr-2 h-4 w-4" /> Calendar View</TabsTrigger>
-              <TabsTrigger value="list"><List className="mr-2 h-4 w-4" /> List View</TabsTrigger>
+              <TabsTrigger value="calendar">
+                <CalendarIcon className="mr-2 h-4 w-4" /> Calendar View
+              </TabsTrigger>
+              <TabsTrigger value="list">
+                <List className="mr-2 h-4 w-4" /> List View
+              </TabsTrigger>
             </TabsList>
           </div>
-          
+
           <div className="flex items-center justify-between min-h-[40px] mb-4">
-              <div className="flex items-center gap-2 flex-wrap">
-                  {hasFilters && (
-                      <Button variant="ghost" size="sm" onClick={() => { setStatusFilter('All'); setDateRange(undefined); }}>
-                          <X className="mr-2 h-4 w-4" />
-                          Clear all filters
-                      </Button>
-                  )}
-                  {statusFilter !== 'All' && (
-                    <Badge variant="secondary" className="pl-2 pr-1 h-7">
-                      Status: {statusFilter}
-                      <Button variant="ghost" size="icon" className="ml-1 h-5 w-5" onClick={() => setStatusFilter('All')}>
-                          <X className="h-3 w-3" />
-                          <span className="sr-only">Remove status filter</span>
-                      </Button>
-                    </Badge>
-                  )}
-                  {dateRange?.from && (
-                    <Badge variant="secondary" className="pl-2 pr-1 h-7">
-                        {dateRange.to ? `${format(dateRange.from, "LLL d")} - ${format(dateRange.to, "LLL d")}` : format(dateRange.from, "LLL d")}
-                       <Button variant="ghost" size="icon" className="ml-1 h-5 w-5" onClick={() => setDateRange(undefined)}>
-                          <X className="h-3 w-3" />
-                           <span className="sr-only">Remove date filter</span>
-                      </Button>
-                    </Badge>
-                  )}
-              </div>
-              <div className="text-sm text-muted-foreground hidden sm:block">
-                  {filteredPosts.length} post{filteredPosts.length !== 1 && 's'} found
-              </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              {hasFilters && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setStatusFilter("All");
+                    setDateRange(undefined);
+                  }}
+                >
+                  <X className="mr-2 h-4 w-4" />
+                  Clear all filters
+                </Button>
+              )}
+              {statusFilter !== "All" && (
+                <Badge variant="secondary" className="pl-2 pr-1 h-7">
+                  Status: {statusFilter}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="ml-1 h-5 w-5"
+                    onClick={() => setStatusFilter("All")}
+                  >
+                    <X className="h-3 w-3" />
+                    <span className="sr-only">Remove status filter</span>
+                  </Button>
+                </Badge>
+              )}
+              {dateRange?.from && (
+                <Badge variant="secondary" className="pl-2 pr-1 h-7">
+                  {dateRange.to
+                    ? `${format(dateRange.from, "LLL d")} - ${format(
+                        dateRange.to,
+                        "LLL d"
+                      )}`
+                    : format(dateRange.from, "LLL d")}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="ml-1 h-5 w-5"
+                    onClick={() => setDateRange(undefined)}
+                  >
+                    <X className="h-3 w-3" />
+                    <span className="sr-only">Remove date filter</span>
+                  </Button>
+                </Badge>
+              )}
+            </div>
+            <div className="text-sm text-muted-foreground hidden sm:block">
+              {filteredPosts.length} post{filteredPosts.length !== 1 && "s"}{" "}
+              found
+            </div>
           </div>
 
           <TabsContent value="calendar">
@@ -178,49 +256,60 @@ export function CalendarClientPage() {
                   onSelect={handleDateSelect}
                   className="p-0"
                   classNames={{
-                    months: 'flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0',
-                    month: 'space-y-4 w-full',
-                    table: 'w-full border-collapse space-y-1',
-                    head_row: 'flex w-full',
-                    head_cell: 'text-muted-foreground rounded-md w-full font-normal text-[0.8rem]',
-                    row: 'flex w-full mt-2',
-                    cell: 'h-24 w-full text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-background/80 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20',
-                    day: 'h-full w-full p-0 font-normal aria-selected:opacity-100',
+                    months:
+                      "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+                    month: "space-y-4 w-full",
+                    table: "w-full border-collapse space-y-1",
+                    head_row: "flex w-full",
+                    head_cell:
+                      "text-muted-foreground rounded-md w-full font-normal text-[0.8rem]",
+                    row: "flex w-full mt-2",
+                    cell: "h-24 w-full text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-background/80 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+                    day: "h-full w-full p-0 font-normal aria-selected:opacity-100",
                   }}
                   components={{
                     Day: ({ date, ...props }) => {
-                      const postsForDay = filteredPosts.filter((p) => isSameDay(p.date, date));
+                      const postsForDay = filteredPosts.filter((p) =>
+                        isSameDay(p.date, date)
+                      );
                       return (
                         <button
                           className={cn(
                             "relative flex flex-col h-full w-full p-1 text-left",
-                            selectedDate && isSameDay(date, selectedDate) && "bg-secondary"
+                            selectedDate &&
+                              isSameDay(date, selectedDate) &&
+                              "bg-secondary"
                           )}
                           onClick={() => handleDateSelect(date)}
                         >
-                          <span className={cn(props.className, 'h-auto p-0 text-xs sm:text-sm font-bold text-black dark:text-white')} >
-                            {format(date, 'd')}
+                          <span
+                            className={cn(
+                              props.className,
+                              "h-auto p-0 text-xs sm:text-sm font-bold text-black dark:text-white"
+                            )}
+                          >
+                            {format(date, "d")}
                           </span>
-                           {postsForDay.length > 0 && (
+                          {postsForDay.length > 0 && (
                             <div className="flex-1 overflow-y-auto mt-1 space-y-1">
-                                {postsForDay.slice(0, 2).map(post => (
-                                    <div 
-                                        key={post.id} 
-                                        className={cn(
-                                          "w-full text-left text-[10px] sm:text-xs rounded-sm p-0.5 whitespace-normal break-words",
-                                          statusColors[post.status]
-                                         )}
-                                    >
-                                        {post.title}
-                                    </div>
-                                ))}
-                                {postsForDay.length > 2 && (
-                                    <div className="text-[10px] sm:text-xs text-muted-foreground">
-                                        + {postsForDay.length - 2} more
-                                    </div>
-                                )}
+                              {postsForDay.slice(0, 2).map((post) => (
+                                <div
+                                  key={post.id}
+                                  className={cn(
+                                    "w-full text-left text-[10px] sm:text-xs rounded-sm p-0.5 whitespace-normal break-words",
+                                    statusColors[post.status]
+                                  )}
+                                >
+                                  {post.title}
+                                </div>
+                              ))}
+                              {postsForDay.length > 2 && (
+                                <div className="text-[10px] sm:text-xs text-muted-foreground">
+                                  + {postsForDay.length - 2} more
+                                </div>
+                              )}
                             </div>
-                           )}
+                          )}
                         </button>
                       );
                     },
@@ -230,130 +319,180 @@ export function CalendarClientPage() {
             </Card>
           </TabsContent>
           <TabsContent value="list">
-             <Card>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="flex items-center gap-1">
-                                  <Popover>
-                                    <PopoverTrigger asChild>
-                                      <Button
-                                        id="date"
-                                        variant={"ghost"}
-                                        className={cn(
-                                          "p-1 h-auto font-medium justify-start",
-                                          !dateRange && "text-muted-foreground"
-                                        )}
-                                      >
-                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {dateRange?.from ? (
-                                          dateRange.to ? (
-                                            <>
-                                              {format(dateRange.from, "LLL dd, y")} -{" "}
-                                              {format(dateRange.to, "LLL dd, y")}
-                                            </>
-                                          ) : (
-                                            format(dateRange.from, "LLL dd, y")
-                                          )
-                                        ) : (
-                                          <span>Date</span>
-                                        )}
-                                      </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                      <Calendar
-                                        initialFocus
-                                        mode="range"
-                                        defaultMonth={dateRange?.from}
-                                        selected={dateRange}
-                                        onSelect={setDateRange}
-                                        numberOfMonths={2}
-                                      />
-                                    </PopoverContent>
-                                  </Popover>
-                                  {dateRange && (
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-7 w-7"
-                                      onClick={() => setDateRange(undefined)}
-                                    >
-                                      <X className="h-4 w-4" />
-                                    </Button>
-                                  )}
-                                </TableHead>
-                                <TableHead>Content</TableHead>
-                                <TableHead>
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <Button variant="ghost" size="sm" className="p-1 h-auto font-medium">
-                                        Status <ChevronDown className="ml-1 h-3 w-3" />
-                                      </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="start">
-                                      {['All', 'Draft', 'Needs Verification', 'Scheduled', 'Published'].map(status => (
-                                        <DropdownMenuCheckboxItem
-                                          key={status}
-                                          checked={statusFilter === status}
-                                          onSelect={() => setStatusFilter(status as PostStatus | 'All')}
-                                        >
-                                          {status}
-                                        </DropdownMenuCheckboxItem>
-                                      ))}
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
-                                </TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {filteredPosts.map(post => (
-                                <TableRow key={post.id}>
-                                    <TableCell>{format(post.date, 'Pp')}</TableCell>
-                                    <TableCell>
-                                        <p className="font-medium">{post.title}</p>
-                                        <p className="text-sm text-muted-foreground truncate max-w-xs">{post.content}</p>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant="outline" className={cn("font-normal border-border", statusColors[post.status])}>
-                                          {post.status}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                    <span className="sr-only">More</span>
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => handleViewPost(post)}>
-                                                    <Eye className="mr-2 h-4 w-4" /> View
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleEditPost(post)}>
-                                                    <Pencil className="mr-2 h-4 w-4" /> Edit
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleCopyPost(post)}>
-                                                    <Copy className="mr-2 h-4 w-4" /> Copy
-                                                </DropdownMenuItem>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem className="text-destructive" onClick={() => handleDeletePost(post.id)}>
-                                                    <Trash2 className="mr-2 h-4 w-4" /> Delete
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </TableCell>
-                                </TableRow>
+            <Card>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="flex items-center gap-1">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              id="date"
+                              variant={"ghost"}
+                              className={cn(
+                                "p-1 h-auto font-medium justify-start",
+                                !dateRange && "text-muted-foreground"
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {dateRange?.from ? (
+                                dateRange.to ? (
+                                  <>
+                                    {format(dateRange.from, "LLL dd, y")} -{" "}
+                                    {format(dateRange.to, "LLL dd, y")}
+                                  </>
+                                ) : (
+                                  format(dateRange.from, "LLL dd, y")
+                                )
+                              ) : (
+                                <span>Date</span>
+                              )}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              initialFocus
+                              mode="range"
+                              defaultMonth={dateRange?.from}
+                              selected={dateRange}
+                              onSelect={setDateRange}
+                              numberOfMonths={2}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        {dateRange && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => setDateRange(undefined)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </TableHead>
+                      <TableHead>Content</TableHead>
+                      <TableHead>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="p-1 h-auto font-medium"
+                            >
+                              Status <ChevronDown className="ml-1 h-3 w-3" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start">
+                            {[
+                              "All",
+                              "Draft",
+                              "Needs Verification",
+                              "Scheduled",
+                              "Published",
+                            ].map((status) => (
+                              <DropdownMenuCheckboxItem
+                                key={status}
+                                checked={statusFilter === status}
+                                onSelect={() =>
+                                  setStatusFilter(status as PostStatus | "All")
+                                }
+                              >
+                                {status}
+                              </DropdownMenuCheckboxItem>
                             ))}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-             </Card>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredPosts.map((post) => (
+                      <TableRow key={post.id}>
+                        <TableCell>{format(post.date, "Pp")}</TableCell>
+                        <TableCell>
+                          <p className="font-medium">{post.title}</p>
+                          <p className="text-sm text-muted-foreground truncate max-w-xs">
+                            {post.content}
+                          </p>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "font-normal border-border",
+                              statusColors[post.status]
+                            )}
+                          >
+                            {post.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">More</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => handleViewPost(post)}
+                              >
+                                <Eye className="mr-2 h-4 w-4" /> View
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleEditPost(post)}
+                              >
+                                <Pencil className="mr-2 h-4 w-4" /> Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleCopyPost(post)}
+                              >
+                                <Copy className="mr-2 h-4 w-4" /> Copy
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onClick={() => handleDeletePost(post.id)}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" /> Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
+
+      {posts.length === 0 && (
+        <div className="flex flex-col items-center justify-center p-8 text-center">
+          <h3 className="text-lg font-semibold text-gray-800">
+            You haven't created any posts yet
+          </h3>
+          <p className="mt-2 text-sm text-gray-600">
+            Get started by creating a new content plan or your first post.
+          </p>
+          <div className="mt-4 flex gap-2">
+            <Link href="/generate-plan" passHref>
+              <Button>Generate a Plan</Button>
+            </Link>
+            <CreatePostButton />
+          </div>
+        </div>
+      )}
 
       <PostSheet
         isOpen={isSheetOpen}
@@ -362,14 +501,22 @@ export function CalendarClientPage() {
         selectedDate={selectedDate}
       />
 
-       <Dialog open={isPostListDialogOpen} onOpenChange={setIsPostListDialogOpen}>
+      <Dialog
+        open={isPostListDialogOpen}
+        onOpenChange={setIsPostListDialogOpen}
+      >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Posts for {selectedDate ? format(selectedDate, 'MMMM d, yyyy') : ''}</DialogTitle>
-            <DialogDescription>Select a post to view or edit, or create a new one.</DialogDescription>
+            <DialogTitle>
+              Posts for{" "}
+              {selectedDate ? format(selectedDate, "MMMM d, yyyy") : ""}
+            </DialogTitle>
+            <DialogDescription>
+              Select a post to view or edit, or create a new one.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-2 py-4">
-            {postsForSelectedDay.map(post => (
+            {postsForSelectedDay.map((post) => (
               <Button
                 key={post.id}
                 variant="outline"
@@ -380,20 +527,33 @@ export function CalendarClientPage() {
                 }}
               >
                 <div className="flex items-center gap-2">
-                   <Badge variant="outline" className={cn("font-normal border-border h-5", statusColors[post.status])}>
-                        {post.status}
-                    </Badge>
-                    <span className="truncate">{post.title}</span>
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "font-normal border-border h-5",
+                      statusColors[post.status]
+                    )}
+                  >
+                    {post.status}
+                  </Badge>
+                  <span className="truncate">{post.title}</span>
                 </div>
               </Button>
             ))}
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setIsPostListDialogOpen(false)}>Cancel</Button>
-            <Button onClick={() => {
-              setIsPostListDialogOpen(false);
-              handleNewPost(selectedDate);
-            }}>
+            <Button
+              variant="ghost"
+              onClick={() => setIsPostListDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setIsPostListDialogOpen(false);
+                handleNewPost(selectedDate);
+              }}
+            >
               <Plus className="mr-2 h-4 w-4" /> Create New Post
             </Button>
           </DialogFooter>
@@ -407,7 +567,7 @@ export function CalendarClientPage() {
               <DialogHeader>
                 <DialogTitle>{activePost.title}</DialogTitle>
                 <DialogDescription>
-                  {format(activePost.date, 'MMMM d, yyyy, p')}
+                  {format(activePost.date, "MMMM d, yyyy, p")}
                 </DialogDescription>
               </DialogHeader>
               <Separator />
@@ -418,47 +578,70 @@ export function CalendarClientPage() {
               <div className="flex justify-between items-center text-sm">
                 <div className="flex items-center gap-2">
                   <span className="font-semibold">Status:</span>
-                  <Badge variant="outline" className={cn("font-normal border-border", statusColors[activePost.status])}>
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "font-normal border-border",
+                      statusColors[activePost.status]
+                    )}
+                  >
                     {activePost.status}
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="font-semibold">Auto-publish:</span>
-                  <Badge variant={activePost.autoPublish ? 'default' : 'secondary'}>
-                    {activePost.autoPublish ? 'On' : 'Off'}
+                  <Badge
+                    variant={activePost.autoPublish ? "default" : "secondary"}
+                  >
+                    {activePost.autoPublish ? "On" : "Off"}
                   </Badge>
                 </div>
               </div>
-               {activePost.status === 'Published' && (
+              {activePost.status === "Published" && (
                 <>
-                <Separator />
-                <div>
-                  <h4 className="font-semibold mb-2">Analytics</h4>
-                  <div className="flex justify-around text-center">
-                    <div>
-                      <p className="text-2xl font-bold">{activePost.analytics.impressions.toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">Impressions</p>
-                    </div>
-                     <div>
-                      <p className="text-2xl font-bold">{activePost.analytics.likes.toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">Likes</p>
-                    </div>
-                     <div>
-                      <p className="text-2xl font-bold">{activePost.analytics.retweets.toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">Retweets</p>
+                  <Separator />
+                  <div>
+                    <h4 className="font-semibold mb-2">Analytics</h4>
+                    <div className="flex justify-around text-center">
+                      <div>
+                        <p className="text-2xl font-bold">
+                          {activePost.analytics.impressions.toLocaleString()}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Impressions
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold">
+                          {activePost.analytics.likes.toLocaleString()}
+                        </p>
+                        <p className="text-xs text-muted-foreground">Likes</p>
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold">
+                          {activePost.analytics.retweets.toLocaleString()}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Retweets
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
                 </>
               )}
               <DialogFooter className="pt-4">
-                <Button variant="outline" onClick={() => {
-                  setIsViewDialogOpen(false);
-                  handleEditPost(activePost);
-                }}>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsViewDialogOpen(false);
+                    handleEditPost(activePost);
+                  }}
+                >
                   <Pencil className="mr-2 h-4 w-4" /> Edit
                 </Button>
-                <Button onClick={() => setIsViewDialogOpen(false)}>Close</Button>
+                <Button onClick={() => setIsViewDialogOpen(false)}>
+                  Close
+                </Button>
               </DialogFooter>
             </>
           )}
@@ -467,5 +650,3 @@ export function CalendarClientPage() {
     </>
   );
 }
-
-    

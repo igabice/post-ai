@@ -10,30 +10,34 @@ function AcceptInviteContent() {
   const [status, setStatus] = useState('validating'); // validating, invalid, accepted, error
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
-  const { acceptInvite, user } = useApp();
+  const { acceptInvite, user, signInWithGoogle } = useApp();
   const router = useRouter();
 
   useEffect(() => {
-    if (token && user) {
-      acceptInvite(token)
-        .then(() => {
-          setStatus('accepted');
-        })
-        .catch((error) => {
-          console.error(error);
-          setStatus('error');
-        });
-    } else if (!token) {
-        setStatus('invalid');
+    if (token) {
+      if (user) {
+        acceptInvite(token)
+          .then(() => {
+            setStatus('accepted');
+          })
+          .catch((error) => {
+            console.error(error);
+            setStatus('error');
+          });
+      } else {
+        localStorage.setItem('pending-invite-token', token);
+      }
+    } else {
+      setStatus('invalid');
     }
   }, [token, user, acceptInvite]);
 
   if (!user) {
     return (
-        <div className="text-center">
-            <p className="mb-4">Please log in to accept the invitation.</p>
-            <Button onClick={() => router.push('/login')}>Login</Button>
-        </div>
+      <div className="text-center">
+        <p className="mb-4">Please log in to accept the invitation.</p>
+        <Button onClick={signInWithGoogle}>Login with Google</Button>
+      </div>
     )
   }
 

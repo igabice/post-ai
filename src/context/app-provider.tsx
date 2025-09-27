@@ -49,7 +49,10 @@ import {
   createUserProfile,
 } from "@/services/user";
 import { addTeamToFirestore } from "@/services/teams";
-import { acceptInvite as acceptInviteInFirestore } from "@/services/invites";
+import {
+  acceptInvite,
+  acceptInvite as acceptInviteInFirestore,
+} from "@/services/invites";
 import { useAsyncSafeState } from "@/hooks/useAsyncSafeState";
 import { stateManager } from "@/lib/stateManager";
 
@@ -90,7 +93,8 @@ interface AppContextType {
   signOut: () => void;
   sendInvite: (
     teamId: string,
-    inviteeEmail: string
+    inviteeEmail: string,
+    invitationId: string
   ) => Promise<string | undefined>;
   acceptInvite: (token: string) => Promise<void>;
 }
@@ -147,6 +151,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                   try {
                     const newUserProfile: UserProfile = {
                       uid: firebaseUser.uid,
+                      email: firebaseUser.email || "",
                       name: firebaseUser.displayName || "New User",
                       avatarUrl:
                         firebaseUser.photoURL ||
@@ -258,6 +263,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       router.push("/login");
     }
   }, [user, isLoading, router, pathname]);
+
+  useEffect(() => {
+    if (user) {
+      const pendingToken = localStorage.getItem("pending-invite-token");
+      if (pendingToken) {
+        acceptInvite(pendingToken, user);
+        localStorage.removeItem("pending-invite-token");
+      }
+    }
+  }, [user]);
 
   const isOnboardingCompleted = useMemo(
     () => user?.isOnboardingCompleted || false,
@@ -593,12 +608,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     completeOnboarding,
     signInWithGoogle,
     signOut,
-    sendInvite: async (teamId: string, inviteeEmail: string) => {
+    sendInvite: async (
+      teamId: string,
+      inviteeEmail: string,
+      invitationId: string
+    ) => {
       try {
         const response = await fetch("/api/send-invite", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ teamId, inviteeEmail }),
+          body: JSON.stringify({ teamId, inviteeEmail, invitationId }),
         });
 
         if (!response.ok) throw new Error("Failed to send invitation");
