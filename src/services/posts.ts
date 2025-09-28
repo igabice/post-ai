@@ -1,18 +1,33 @@
-import { doc, updateDoc, collection, setDoc, deleteDoc, getDoc } from "firebase/firestore";
+import {
+  doc,
+  updateDoc,
+  collection,
+  setDoc,
+  deleteDoc,
+  getDoc,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Post } from "@/lib/types";
 
-export const updatePostInFirestore = async (postId: string, postData: Partial<Post>) => {
+export const updatePostInFirestore = async (
+  postId: string,
+  postData: Partial<Post>
+) => {
   const postRef = doc(db, "posts", postId);
   await updateDoc(postRef, postData);
 };
 
-export const addPostToFirestore = async (postData: Omit<Post, 'id' | 'analytics' | 'teamId'>, teamId: string): Promise<Post> => {
-  const postCollectionRef = collection(db, 'posts');
+export const addPostToFirestore = async (
+  postData: Omit<Post, "id" | "analytics" | "teamId" | "socialMediaAccountIds">,
+  teamId: string,
+  socialMediaAccountIds: string[] = []
+): Promise<Post> => {
+  const postCollectionRef = collection(db, "posts");
   const newPostRef = doc(postCollectionRef);
   const newPostId = newPostRef.id;
 
   const newPost: Post = {
+    socialMediaAccountIds: socialMediaAccountIds,
     ...postData,
     id: newPostId,
     teamId: teamId,
@@ -28,7 +43,9 @@ export const deletePostFromFirestore = async (postId: string) => {
   await deleteDoc(postRef);
 };
 
-export const getPostFromFirestore = async (postId: string): Promise<Post | undefined> => {
+export const getPostFromFirestore = async (
+  postId: string
+): Promise<Post | undefined> => {
   const postRef = doc(db, "posts", postId);
   const docSnap = await getDoc(postRef);
   if (docSnap.exists()) {

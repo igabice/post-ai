@@ -48,7 +48,7 @@ import {
   updateUserActiveTeam,
   createUserProfile,
 } from "@/services/user";
-import { addTeamToFirestore } from "@/services/teams";
+import { addTeamToFirestore, getTeamById } from "@/services/teams";
 import {
   acceptInvite,
   acceptInvite as acceptInviteInFirestore,
@@ -61,7 +61,7 @@ interface AppContextType {
   posts: Post[];
   contentPlans: ContentPlan[];
   generatedPosts: Post[];
-  activeTeam: Team | undefined;
+  activeTeam: Team | null | undefined;
   isOnboardingCompleted: boolean;
   isLoading: boolean;
   setGeneratedPosts: (posts: Post[]) => void;
@@ -104,6 +104,9 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useAsyncSafeState<UserProfile | null | undefined>(
+    undefined
+  );
+  const [activeTeam, setActiveTeam] = useAsyncSafeState<Team | null | undefined>(
     undefined
   );
   const [allPosts, setAllPosts] = useAsyncSafeState<Post[]>([]);
@@ -239,6 +242,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return () => clearTimeout(timeoutId);
   }, [user?.activeTeamId, setAllPosts, setIsLoading, toast]);
 
+  useEffect(() => {
+    if (user?.activeTeamId) {
+      getTeamById(user.activeTeamId).then(setActiveTeam);
+    }
+  }, [user?.activeTeamId, setActiveTeam]);
+
   // Navigation logic with proper sequencing
   useEffect(() => {
     if (user === undefined || isLoading) return;
@@ -318,7 +327,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
-      const newPost = await addPostToFirestore(postData, user.activeTeamId);
+      const { socialMediaAccountIds, ...restOfPostData } = postData;
+      const newPost = await addPostToFirestore(
+        restOfPostData,
+        user.activeTeamId,
+        socialMediaAccountIds
+      );
       setAllPosts((prev) =>
         [...prev, newPost].sort((a, b) => b.date.getTime() - a.date.getTime())
       );
@@ -347,6 +361,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           await updateUserActiveTeam(user.uid, teamId);
           // Then update local state
           setUser((prev) => (prev ? { ...prev, activeTeamId: teamId } : null));
+          const newActiveTeam = await getTeamById(teamId);
+          setActiveTeam(newActiveTeam);
         }
       );
       toast({ title: "Success", description: "Active team switched." });
@@ -493,12 +509,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Memoized derived values
-  const activeTeam = useMemo(
-    () => user?.teams.find((t) => t.id === user.activeTeamId),
-    [user?.teams, user?.activeTeamId]
-  );
-
   const posts = useMemo(
     () => (user ? allPosts.filter((p) => p.teamId === user.activeTeamId) : []),
     [allPosts, user]
@@ -608,11 +618,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           const postData: Omit<Post, "id" | "analytics" | "teamId"> = {
             title: `${postToCopy.title} (Copy)`,
             content: postToCopy.content,
+            socialMediaAccountIds: postToCopy.socialMediaAccountIds,
             date: new Date(),
             status: "Draft",
             autoPublish: false,
           };
-          const newPost = await addPostToFirestore(postData, user.activeTeamId);
+          const { socialMediaAccountIds, ...restOfPostData } = postData;
+          const newPost = await addPostToFirestore(
+            restOfPostData,
+            user.activeTeamId,
+            socialMediaAccountIds
+          );
           setAllPosts((prev) =>
             [...prev, newPost].sort(
               (a, b) => b.date.getTime() - a.date.getTime()

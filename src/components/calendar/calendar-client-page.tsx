@@ -63,8 +63,8 @@ import { PostSheet } from "./post-sheet";
 import type { Post, PostStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { Separator } from "../ui/separator";
 import { CreatePostButton } from "../dashboard/create-post-button";
+import { PostViewDialog } from "./post-view-dialog";
 
 export function CalendarClientPage() {
   const { posts, deletePost, copyPost } = useApp();
@@ -560,93 +560,12 @@ export function CalendarClientPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          {activePost && (
-            <>
-              <DialogHeader>
-                <DialogTitle>{activePost.title}</DialogTitle>
-                <DialogDescription>
-                  {format(activePost.date, "MMMM d, yyyy, p")}
-                </DialogDescription>
-              </DialogHeader>
-              <Separator />
-              <div className="prose prose-sm dark:prose-invert max-w-none py-4 whitespace-pre-wrap">
-                {activePost.content}
-              </div>
-              <Separator />
-              <div className="flex justify-between items-center text-sm">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold">Status:</span>
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "font-normal border-border",
-                      statusColors[activePost.status]
-                    )}
-                  >
-                    {activePost.status}
-                  </Badge>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold">Auto-publish:</span>
-                  <Badge
-                    variant={activePost.autoPublish ? "default" : "secondary"}
-                  >
-                    {activePost.autoPublish ? "On" : "Off"}
-                  </Badge>
-                </div>
-              </div>
-              {activePost.status === "Published" && (
-                <>
-                  <Separator />
-                  <div>
-                    <h4 className="font-semibold mb-2">Analytics</h4>
-                    <div className="flex justify-around text-center">
-                      <div>
-                        <p className="text-2xl font-bold">
-                          {activePost.analytics.impressions.toLocaleString()}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Impressions
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-2xl font-bold">
-                          {activePost.analytics.likes.toLocaleString()}
-                        </p>
-                        <p className="text-xs text-muted-foreground">Likes</p>
-                      </div>
-                      <div>
-                        <p className="text-2xl font-bold">
-                          {activePost.analytics.retweets.toLocaleString()}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Retweets
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
-              <DialogFooter className="pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setIsViewDialogOpen(false);
-                    handleEditPost(activePost);
-                  }}
-                >
-                  <Pencil className="mr-2 h-4 w-4" /> Edit
-                </Button>
-                <Button onClick={() => setIsViewDialogOpen(false)}>
-                  Close
-                </Button>
-              </DialogFooter>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      <PostViewDialog
+        isOpen={isViewDialogOpen}
+        setIsOpen={setIsViewDialogOpen}
+        post={activePost}
+        onEdit={handleEditPost}
+      />
     </>
   );
 }

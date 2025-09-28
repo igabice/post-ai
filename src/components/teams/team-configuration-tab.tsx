@@ -342,9 +342,9 @@ export function TeamConfigurationTab() {
                   <ReactImagePickerEditor
                     config={imagePickerConfig}
                     imageSrcProp={field.value}
-                    onSave={(newImage) => field.onChange(newImage)}
-                    onDelete={() => field.onChange("")}
-                    hideDelete={false}
+                    imageChanged={(newDataUri: string | null) => {
+                      field.onChange(newDataUri || "");
+                    }}
                   />
                 )}
               />

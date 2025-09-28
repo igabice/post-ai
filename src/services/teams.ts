@@ -4,6 +4,7 @@ import {
   serverTimestamp,
   collection,
   updateDoc,
+  getDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Team, TeamMember, Permissions, SocialMediaAccount } from "@/lib/types";
@@ -51,4 +52,15 @@ export const updateTeamSocialMediaAccounts = async (
   await updateDoc(teamRef, {
     socialMediaAccounts: socialMediaAccounts,
   });
+};
+
+export const getTeamById = async (teamId: string): Promise<Team | null> => {
+  const teamRef = doc(db, "teams", teamId);
+  const teamSnap = await getDoc(teamRef);
+
+  if (teamSnap.exists()) {
+    return teamSnap.data() as Team;
+  } else {
+    return null;
+  }
 };

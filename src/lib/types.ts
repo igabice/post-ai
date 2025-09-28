@@ -12,6 +12,7 @@ export type Post = {
   content: string;
   status: PostStatus;
   autoPublish: boolean;
+  socialMediaAccountIds: string[];
   analytics: {
     likes: number;
     retweets: number;
@@ -48,7 +49,7 @@ export type Team = {
   description: string;
   createdAt: any;
   members: { [uid: string]: TeamMember };
-  socialMediaAccounts: SocialMediaAccount[]; // New field
+  socialMediaAccounts: SocialMediaAccount[];
 };
 
 export type UserProfile = {
