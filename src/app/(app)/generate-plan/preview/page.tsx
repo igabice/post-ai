@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -31,6 +30,7 @@ const postSchema = z.object({
   date: z.date(),
   status: z.enum(['Draft', 'Scheduled', 'Published', 'Needs Verification']),
   autoPublish: z.boolean(),
+  socialMediaAccountIds: z.array(z.string()).optional(),
 });
 
 const formSchema = z.object({
@@ -63,13 +63,14 @@ export default function PreviewPlanPage() {
     }
   }, [generatedPosts, router, form]);
 
-  const onSubmit = (data: z.infer<typeof formSchema>) => {
-    const newPostIds: string[] = [];
-    data.posts.forEach((post) => {
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    const newPostsPromises = data.posts.map((post) => {
       const { id, ...postData } = post; // remove temporary id
-      const newPost = addPost(postData);
-      newPostIds.push(newPost.id);
+      return addPost(postData);
     });
+
+    const newPosts = await Promise.all(newPostsPromises);
+    const newPostIds = newPosts.map((post) => post!.id);
 
     const planTitle = searchParams.get('title');
     const planDescription = searchParams.get('description');
@@ -78,7 +79,7 @@ export default function PreviewPlanPage() {
     const endDate = searchParams.get('endDate');
 
     if (planTitle && planDescription && planTone && startDate && endDate) {
-        addContentPlan({
+        await addContentPlan({
             title: planTitle,
             description: planDescription,
             tone: planTone,

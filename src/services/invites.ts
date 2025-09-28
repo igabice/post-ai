@@ -150,13 +150,21 @@ export const acceptInvite = async (token: string, user: UserProfile) => {
   });
 };
 
-export const getPendingInvites = async (teamId: string): Promise<Invitation[]> => {
+export const getPendingInvites = async (
+  teamId: string
+): Promise<Invitation[]> => {
   const q = query(
-    collection(db, 'invitations'),
-    where('teamId', '==', teamId),
-    where('status', '==', 'pending')
+    collection(db, "invitations"),
+    where("teamId", "==", teamId),
+    where("status", "==", "pending")
   );
   const querySnapshot = await getDocs(q);
-  console.log("Pending invites fetched:", querySnapshot.docs.map(doc => doc.data()));
-  return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as Invitation[];
+  console.log(
+    "Pending invites fetched:",
+    querySnapshot.docs.map((doc) => doc.data())
+  );
+  return querySnapshot.docs.map((doc) => ({
+    ...doc.data(),
+    id: doc.id,
+  })) as Invitation[];
 };

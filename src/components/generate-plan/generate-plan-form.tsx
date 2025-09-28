@@ -1,13 +1,13 @@
-
 'use client';
 
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { addDays, format } from 'date-fns';
-import { CalendarIcon, Loader2, Sparkles, Plus, Trash2 } from 'lucide-react';
-import { useTransition } from 'react';
+import { CalendarIcon, Loader2, Sparkles, Plus, Trash2, ChevronsUpDown, Check } from 'lucide-react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 import { useApp } from '@/context/app-provider';
 import { Button } from '@/components/ui/button';
@@ -36,6 +36,9 @@ import { cn } from '@/lib/utils';
 import { Calendar } from '../ui/calendar';
 import { generateContentPlan } from '../calendar/actions';
 import { Post } from '@/lib/types';
+import { FullPageLoader } from '../ui/full-page-loader';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
+import { getPlatformIcon } from '@/lib/social-media-utils';
 
 const availableDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -54,6 +57,7 @@ const generatePlanSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters.'),
   description: z.string().min(10, 'Description must be at least 10 characters.'),
   tone: z.string().nonempty('Please select a tone.'),
+  socialMediaAccountIds: z.array(z.string()).optional(),
   dateRange: z.object({
     from: z.date(),
     to: z.date(),
@@ -70,16 +74,17 @@ const generatePlanSchema = z.object({
 type FormData = z.infer<typeof generatePlanSchema>;
 
 export function GeneratePlanForm() {
-  const { user, setGeneratedPosts } = useApp();
+  const { user, setGeneratedPosts, activeTeam } = useApp();
   const { toast } = useToast();
   const router = useRouter();
-  const [isGenerating, startGeneration] = useTransition();
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(generatePlanSchema),
     defaultValues: {
       title: '',
       description: '',
+      socialMediaAccountIds: [],
       dateRange: {
         from: new Date(),
         to: addDays(new Date(), 7),
@@ -146,52 +151,54 @@ export function GeneratePlanForm() {
       router.push(`/generate-plan/preview?${queryParams}`);
   }
 
-  const handleGenerateWithAI = (data: FormData) => {
-    startGeneration(async () => {
-      const postDates = getPostDates(data);
+  const handleGenerateWithAI = async (data: FormData) => {
+    const postDates = getPostDates(data);
 
-      if (postDates.length === 0) {
-        toast({
-          title: 'No dates selected',
-          description: 'Please select at least one valid future date to generate posts.',
-          variant: 'destructive',
-        });
-        return;
-      }
+    if (postDates.length === 0) {
+      toast({
+        title: 'No dates selected',
+        description: 'Please select at least one valid future date to generate posts.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
-      try {
-        const result = await generateContentPlan({
-          topicPreferences: user.topicPreferences,
-          postFrequency: `${postDates.length} posts over the selected period`,
-          title: data.title,
-          description: data.description,
-          tone: data.tone,
-        });
+    setIsLoading(true);
+    try {
+      const result = await generateContentPlan({
+        topicPreferences: user.topicPreferences,
+        postFrequency: `${postDates.length} posts over the selected period`,
+        title: data.title,
+        description: data.description,
+        tone: data.tone,
+      });
 
-        if (result.posts && result.posts.length > 0) {
-           const aiPosts = result.posts.map((post, index) => {
-             return {
-               ...post,
-               date: postDates[index] || new Date(), // Fallback, though should always have a date
-             };
-           });
-           navigateToPreview(aiPosts, data);
-        } else {
-          toast({
-            title: 'Error',
-            description: 'Could not generate a content plan. Please try again.',
-            variant: 'destructive',
-          });
-        }
-      } catch (error) {
-        console.error("Plan generation error:", error);
+      if (result.posts && result.posts.length > 0) {
+         const aiPosts = result.posts.map((post, index) => {
+           return {
+             ...post,
+             date: postDates[index] || new Date(), // Fallback, though should always have a date
+             socialMediaAccountIds: data.socialMediaAccountIds,
+           };
+         });
+         navigateToPreview(aiPosts, data);
+      } else {
         toast({
           title: 'Error',
-          description: 'An unexpected error occurred during plan generation. Please try again.',
+          description: 'Could not generate a content plan. Please try again.',
           variant: 'destructive',
         });
       }
-    });
+    } catch (error) {
+      console.error("Plan generation error:", error);
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred during plan generation. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   const handleContinueWithoutAI = async () => {
@@ -222,10 +229,15 @@ export function GeneratePlanForm() {
           date: date,
           status: 'Draft' as const,
           autoPublish: false,
+          socialMediaAccountIds: data.socialMediaAccountIds,
       }));
 
       navigateToPreview(emptyPosts, data);
   };
+
+  if (isLoading) {
+    return <FullPageLoader />;
+  }
 
   return (
     <Form {...form}>
@@ -286,6 +298,82 @@ export function GeneratePlanForm() {
                       <SelectItem value="Serious">Serious</SelectItem>
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="socialMediaAccountIds"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Social Media Accounts</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          className={cn(
+                            "w-[300px] justify-between",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value && field.value.length > 0
+                            ? `${field.value.length} selected`
+                            : "Select accounts"}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[300px] p-0">
+                      <Command>
+                        <CommandInput placeholder="Search accounts..." />
+                        <CommandEmpty>No accounts found.</CommandEmpty>
+                        <CommandGroup>
+                          {activeTeam?.socialMediaAccounts.map((account) => (
+                            <CommandItem
+                              value={account.id}
+                              key={account.id}
+                              onSelect={() => {
+                                const selected = field.value || [];
+                                const isSelected = selected.includes(account.id);
+                                form.setValue(
+                                  "socialMediaAccountIds",
+                                  isSelected
+                                    ? selected.filter((id) => id !== account.id)
+                                    : [...selected, account.id]
+                                );
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  (field.value || []).includes(account.id)
+                                    ? "opacity-100"
+                                    : "opacity-0"
+                                )}
+                              />
+                              <div className="flex items-center">
+                                <Image
+                                  src={getPlatformIcon(account.title)}
+                                  alt={account.name}
+                                  width={20}
+                                  height={20}
+                                  className="mr-2 rounded-full"
+                                />
+                                {account.name}
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  <FormDescription>
+                    Select the social media accounts to post to.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -407,11 +495,11 @@ export function GeneratePlanForm() {
             />
           </CardContent>
           <CardFooter className="border-t px-6 py-4 flex items-center gap-2">
-            <Button type="submit" disabled={isGenerating}>
-              {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
               Generate Posts
             </Button>
-             <Button type="button" variant="secondary" onClick={handleContinueWithoutAI} disabled={isGenerating}>
+             <Button type="button" variant="secondary" onClick={handleContinueWithoutAI} disabled={isLoading}>
               Continue without AI
             </Button>
           </CardFooter>

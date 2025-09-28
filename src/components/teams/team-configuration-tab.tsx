@@ -220,7 +220,7 @@ export function TeamConfigurationTab() {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Team Configuration</CardTitle>
+        <CardTitle>Social Media Accounts</CardTitle>
         <Button onClick={handleAddAccountClick}>
           <Plus className="mr-2 h-4 w-4" /> Add Account
         </Button>

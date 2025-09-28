@@ -85,10 +85,29 @@ export default {
             height: '0',
           },
         },
+        spin: {
+          from: {
+            transform: 'rotate(0deg)',
+          },
+          to: {
+            transform: 'rotate(360deg)',
+          },
+        },
+        'spin-reverse': {
+          from: {
+            transform: 'rotate(360deg)',
+          },
+          to: {
+            transform: 'rotate(0deg)',
+          },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'spin-slow': 'spin 10s linear infinite',
+        'spin-reverse-medium': 'spin-reverse 5s linear infinite',
+        'spin-fast': 'spin 2s linear infinite',
       },
     },
   },

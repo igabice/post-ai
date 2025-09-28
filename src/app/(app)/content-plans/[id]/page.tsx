@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -15,12 +14,18 @@ import { useToast } from '@/hooks/use-toast';
 import { Post } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
+import { useState } from 'react';
+import { PostViewDialog } from '@/components/calendar/post-view-dialog';
+import { PostSheet } from '@/components/calendar/post-sheet';
 
 export default function ContentPlanDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
   const { contentPlans, getPostById, deletePost, copyPost } = useApp();
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [activePost, setActivePost] = useState<Post | null>(null);
 
   const planId = params.id as string;
   const plan = contentPlans.find(p => p.id === planId);
@@ -60,6 +65,16 @@ export default function ContentPlanDetailPage() {
       title: 'Post Deleted',
       description: 'The post has been successfully deleted.',
     });
+  };
+
+  const handleViewPost = (post: Post) => {
+    setActivePost(post);
+    setIsViewDialogOpen(true);
+  };
+
+  const handleEditPost = (post: Post) => {
+    setActivePost(post);
+    setIsSheetOpen(true);
   };
   
 
@@ -126,10 +141,10 @@ export default function ContentPlanDetailPage() {
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onClick={() => router.push('/calendar')}>
-                                                <Eye className="mr-2 h-4 w-4" /> View in Calendar
+                                            <DropdownMenuItem onClick={() => handleViewPost(post)}>
+                                                <Eye className="mr-2 h-4 w-4" /> View
                                             </DropdownMenuItem>
-                                             <DropdownMenuItem onClick={() => router.push('/calendar')}>
+                                             <DropdownMenuItem onClick={() => handleEditPost(post)}>
                                                 <Edit className="mr-2 h-4 w-4" /> Edit
                                             </DropdownMenuItem>
                                             <DropdownMenuItem onClick={() => handleCopyPost(post)}>
@@ -150,6 +165,18 @@ export default function ContentPlanDetailPage() {
          </Card>
       </div>
 
+      <PostViewDialog
+        isOpen={isViewDialogOpen}
+        setIsOpen={setIsViewDialogOpen}
+        post={activePost}
+        onEdit={handleEditPost}
+      />
+
+      <PostSheet
+        isOpen={isSheetOpen}
+        setIsOpen={setIsSheetOpen}
+        post={activePost}
+      />
     </div>
   );
 }

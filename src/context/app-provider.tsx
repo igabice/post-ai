@@ -50,6 +50,10 @@ import {
 } from "@/services/user";
 import { addTeamToFirestore, getTeamById } from "@/services/teams";
 import {
+  addContentPlanToFirestore,
+  getContentPlansFromFirestore,
+} from "@/services/plans";
+import {
   acceptInvite,
   acceptInvite as acceptInviteInFirestore,
 } from "@/services/invites";
@@ -73,7 +77,7 @@ interface AppContextType {
   ) => Promise<Post | undefined>;
   addContentPlan: (
     plan: Omit<ContentPlan, "id" | "createdAt" | "teamId">
-  ) => void;
+  ) => Promise<void>;
   deletePost: (postId: string) => Promise<void>;
   copyPost: (postId: string) => Promise<void>;
   availableTopics: string[];
@@ -106,9 +110,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useAsyncSafeState<UserProfile | null | undefined>(
     undefined
   );
-  const [activeTeam, setActiveTeam] = useAsyncSafeState<Team | null | undefined>(
-    undefined
-  );
+  const [activeTeam, setActiveTeam] = useAsyncSafeState<
+    Team | null | undefined
+  >(undefined);
   const [allPosts, setAllPosts] = useAsyncSafeState<Post[]>([]);
   const [allContentPlans, setAllContentPlans] = useAsyncSafeState<
     ContentPlan[]
@@ -248,6 +252,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user?.activeTeamId, setActiveTeam]);
 
+  useEffect(() => {
+    if (user?.activeTeamId) {
+      getContentPlansFromFirestore(user.activeTeamId).then((plans) => {
+        const plansWithDateObjects = plans.map((plan) => ({
+          ...plan,
+          createdAt: convertToDate(plan.createdAt),
+          startDate: convertToDate(plan.startDate),
+          endDate: convertToDate(plan.endDate),
+        }));
+        setAllContentPlans(plansWithDateObjects);
+      });
+    }
+  }, [user?.activeTeamId, setAllContentPlans]);
+
   // Navigation logic with proper sequencing
   useEffect(() => {
     if (user === undefined || isLoading) return;
@@ -346,6 +364,31 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         variant: "destructive",
       });
       return undefined;
+    }
+  };
+
+  const addContentPlan = async (
+    plan: Omit<ContentPlan, "id" | "createdAt" | "teamId">
+  ) => {
+    if (!user?.activeTeamId) {
+      toast({
+        title: "Error",
+        description: "No active team selected.",
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      const newPlan = await addContentPlanToFirestore(plan, user.activeTeamId);
+      setAllContentPlans((prev) => [newPlan, ...prev]);
+      toast({ title: "Success", description: "Content plan created." });
+    } catch (error) {
+      console.error("Error creating content plan: ", error);
+      toast({
+        title: "Error",
+        description: "There was a problem creating the content plan.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -575,17 +618,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     updateTeam,
     updatePost,
     addPost,
-    addContentPlan: (
-      plan: Omit<ContentPlan, "id" | "createdAt" | "teamId">
-    ) => {
-      const newPlan: ContentPlan = {
-        ...plan,
-        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        teamId: user?.activeTeamId || "",
-        createdAt: new Date(),
-      };
-      setAllContentPlans((prev) => [newPlan, ...prev]);
-    },
+    addContentPlan,
     deletePost: async (postId: string) => {
       const previousPosts = allPosts;
       try {
